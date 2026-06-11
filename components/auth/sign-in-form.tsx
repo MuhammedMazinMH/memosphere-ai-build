@@ -28,7 +28,9 @@ export function SignInForm() {
           <FieldLabel htmlFor="email">Email</FieldLabel>
           <Input
             id="email"
+            name="email"
             type="email"
+            autoComplete="email"
             placeholder="you@university.edu"
             defaultValue="alex.morgan@university.edu"
             required
@@ -47,7 +49,9 @@ export function SignInForm() {
           <div className="relative">
             <Input
               id="password"
+              name="password"
               type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
               placeholder="Enter your password"
               defaultValue="password123"
               required

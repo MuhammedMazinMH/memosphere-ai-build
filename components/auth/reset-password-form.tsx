@@ -27,14 +27,14 @@ export function ResetPasswordForm() {
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="password">New password</FieldLabel>
-          <Input id="password" type="password" placeholder="Enter new password" required />
+          <Input id="password" name="password" type="password" autoComplete="new-password" placeholder="Enter new password" required />
           <FieldDescription>
             Use 8+ characters with a mix of letters, numbers, and symbols.
           </FieldDescription>
         </Field>
         <Field>
           <FieldLabel htmlFor="confirm">Confirm password</FieldLabel>
-          <Input id="confirm" type="password" placeholder="Re-enter new password" required />
+          <Input id="confirm" name="confirm" type="password" autoComplete="new-password" placeholder="Re-enter new password" required />
         </Field>
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? <Spinner data-icon="inline-start" /> : null}

@@ -48,7 +48,7 @@ export function ForgotPasswordForm() {
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input id="email" type="email" placeholder="you@university.edu" required />
+          <Input id="email" name="email" type="email" autoComplete="email" placeholder="you@university.edu" required />
         </Field>
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? <Spinner data-icon="inline-start" /> : null}

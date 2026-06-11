@@ -38,17 +38,19 @@ export function SignUpForm() {
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="name">Full name</FieldLabel>
-          <Input id="name" placeholder="Alex Morgan" required />
+          <Input id="name" name="name" autoComplete="name" placeholder="Alex Morgan" required />
         </Field>
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input id="email" type="email" placeholder="you@university.edu" required />
+          <Input id="email" name="email" type="email" autoComplete="email" placeholder="you@university.edu" required />
         </Field>
         <Field>
           <FieldLabel htmlFor="password">Password</FieldLabel>
           <Input
             id="password"
+            name="password"
             type="password"
+            autoComplete="new-password"
             placeholder="Create a strong password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
