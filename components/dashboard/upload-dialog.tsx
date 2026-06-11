@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,27 @@ export function UploadDialog({ trigger }: { trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false)
   const [stage, setStage] = useState<"idle" | "uploading" | "processing" | "done">("idle")
   const [progress, setProgress] = useState(0)
+  const [fileName, setFileName] = useState("")
+  const [dragActive, setDragActive] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const accept = ".pdf,.pptx,.md,.png,.jpg,.jpeg,.mp4"
+  const maxBytes = 200 * 1024 * 1024
+
+  function openFilePicker() {
+    inputRef.current?.click()
+  }
+
+  function handleFiles(files: FileList | null) {
+    const file = files?.[0]
+    if (!file) return
+    if (file.size > maxBytes) {
+      toast.error("File is too large. Maximum size is 200MB.")
+      return
+    }
+    setFileName(file.name)
+    start()
+  }
 
   function start() {
     setStage("uploading")
@@ -42,6 +63,9 @@ export function UploadDialog({ trigger }: { trigger: React.ReactNode }) {
   function reset() {
     setStage("idle")
     setProgress(0)
+    setFileName("")
+    setDragActive(false)
+    if (inputRef.current) inputRef.current.value = ""
   }
 
   function close(v: boolean) {
@@ -62,15 +86,39 @@ export function UploadDialog({ trigger }: { trigger: React.ReactNode }) {
 
         {stage === "idle" && (
           <FieldGroup>
+            <input
+              ref={inputRef}
+              type="file"
+              accept={accept}
+              className="sr-only"
+              onChange={(e) => handleFiles(e.target.files)}
+            />
             <button
               type="button"
-              onClick={start}
-              className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed border-border bg-muted/40 p-8 text-center transition-colors hover:border-primary/50 hover:bg-muted"
+              onClick={openFilePicker}
+              onDragOver={(e) => {
+                e.preventDefault()
+                setDragActive(true)
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault()
+                setDragActive(false)
+              }}
+              onDrop={(e) => {
+                e.preventDefault()
+                setDragActive(false)
+                handleFiles(e.dataTransfer.files)
+              }}
+              className={`flex flex-col items-center gap-3 rounded-xl border-2 border-dashed bg-muted/40 p-8 text-center transition-colors hover:border-primary/50 hover:bg-muted ${
+                dragActive ? "border-primary bg-muted" : "border-border"
+              }`}
             >
               <span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <UploadCloud className="size-6" />
               </span>
-              <span className="text-sm font-medium">Click to browse or drop files</span>
+              <span className="text-sm font-medium">
+                {dragActive ? "Drop your file here" : "Click to browse or drop files"}
+              </span>
               <span className="text-xs text-muted-foreground">
                 PDF, PPTX, MD, PNG, MP4 up to 200MB
               </span>
@@ -100,7 +148,7 @@ export function UploadDialog({ trigger }: { trigger: React.ReactNode }) {
             <div className="flex items-center gap-3 rounded-lg border p-3">
               <FileText className="size-8 text-primary" />
               <div className="flex flex-1 flex-col">
-                <span className="text-sm font-medium">Lecture Notes Week 8.pdf</span>
+                <span className="truncate text-sm font-medium">{fileName}</span>
                 <span className="text-xs text-muted-foreground">
                   {stage === "uploading" ? `Uploading ${progress}%` : "Extracting concepts with AI..."}
                 </span>
