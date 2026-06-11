@@ -80,16 +80,16 @@ export function ProfileView() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field>
                   <FieldLabel htmlFor="name">Full name</FieldLabel>
-                  <Input id="name" defaultValue={user.name} />
+                  <Input id="name" name="name" autoComplete="name" defaultValue={user.name} />
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="email">Email</FieldLabel>
-                  <Input id="email" type="email" defaultValue={user.email} />
+                  <Input id="email" name="email" type="email" autoComplete="email" defaultValue={user.email} />
                 </Field>
               </div>
               <Field>
                 <FieldLabel htmlFor="goal">Study goal</FieldLabel>
-                <Input id="goal" defaultValue={user.goal} />
+                <Input id="goal" name="goal" autoComplete="off" defaultValue={user.goal} />
                 <FieldDescription>What are you working toward right now?</FieldDescription>
               </Field>
               <Field>
@@ -193,16 +193,16 @@ export function ProfileView() {
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="current">Current password</FieldLabel>
-                <Input id="current" type="password" />
+                  <Input id="current" name="current-password" type="password" autoComplete="current-password" />
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field>
                   <FieldLabel htmlFor="new">New password</FieldLabel>
-                  <Input id="new" type="password" />
+                  <Input id="new" name="new-password" type="password" autoComplete="new-password" />
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="confirm">Confirm password</FieldLabel>
-                  <Input id="confirm" type="password" />
+                  <Input id="confirm" name="confirm-password" type="password" autoComplete="new-password" />
                 </Field>
               </div>
             </FieldGroup>
