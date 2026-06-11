@@ -44,7 +44,7 @@ export function Faq() {
             Frequently asked questions
           </h2>
         </div>
-        <Accordion openMultiple={false} className="mt-10 w-full">
+        <Accordion className="mt-10 w-full">
           {faqs.map((faq, i) => (
             <AccordionItem key={i} value={`item-${i}`}>
               <AccordionTrigger className="text-left text-base font-medium">
