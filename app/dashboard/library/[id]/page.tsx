@@ -17,7 +17,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { FileTypeIcon, fileTypeLabel } from "@/components/dashboard/file-type-icon"
-import { knowledgeItems } from "@/lib/mock-data"
+import { documentService } from "@/lib/services"
+
+const knowledgeItems = documentService.getDocuments()
 
 export async function generateMetadata({
   params,

@@ -7,7 +7,11 @@
  * - Persisted profile fields live in Aurora PostgreSQL (`users` table).
  */
 export interface User {
-  id: string
+  /**
+   * Stable identity. Owned by Clerk once auth is connected; absent in the
+   * current mock seed (resolved at request time from the Clerk session).
+   */
+  id?: string
   name: string
   email: string
   initials: string

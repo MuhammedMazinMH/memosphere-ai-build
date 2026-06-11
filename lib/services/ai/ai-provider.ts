@@ -22,7 +22,9 @@ import type {
 
 export interface SummaryRequest {
   documentId: string
-  subjectId: string
+  /** Optional: resolved from the document when not supplied by the caller. */
+  subjectId?: string
+  length?: 'short' | 'medium' | 'detailed'
   content?: string
 }
 

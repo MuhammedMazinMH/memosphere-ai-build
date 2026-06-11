@@ -8,7 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { FileTypeIcon, fileTypeLabel } from "@/components/dashboard/file-type-icon"
-import { subjects, knowledgeItems } from "@/lib/mock-data"
+import { subjectService, documentService } from "@/lib/services"
+
+const subjects = subjectService.getSubjects()
+const knowledgeItems = documentService.getDocuments()
 
 export async function generateMetadata({
   params,
