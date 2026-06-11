@@ -78,7 +78,7 @@ export function Testimonials() {
         </div>
 
         <div
-          className="relative mx-auto mt-16 h-[34rem] w-full max-w-6xl px-6 sm:px-8"
+          className="relative mx-auto mt-16 h-[34rem] w-full max-w-6xl overflow-hidden px-6 sm:px-8"
           onMouseEnter={() => setIsAutoPlay(false)}
           onMouseLeave={() => setIsAutoPlay(true)}
           style={{ perspective: '1200px' }}
