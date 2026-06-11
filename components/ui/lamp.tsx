@@ -14,63 +14,74 @@ export const LampContainer = ({
   return (
     <div
       className={cn(
-        "relative flex w-full flex-col items-center justify-center overflow-hidden bg-background z-0",
+        "relative isolate z-0 w-full overflow-hidden bg-background",
         className,
       )}
     >
-      <div className="relative flex w-full flex-1 scale-x-[0.55] scale-y-110 items-center justify-center isolate z-0 sm:scale-x-75 sm:scale-y-125 md:scale-x-100">
-        {/* Left conic beam */}
-        <motion.div
-          initial={{ opacity: 0.5, width: "15rem" }}
-          whileInView={{ opacity: 1, width: "30rem" }}
-          transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }}
-          style={{
-            backgroundImage:
-              "conic-gradient(from 70deg at center top, var(--primary), transparent, transparent)",
-          }}
-          className="absolute inset-auto right-1/2 h-56 overflow-visible w-[30rem] text-foreground"
-        >
-          <div className="absolute w-full left-0 bg-background h-40 bottom-0 z-20 [mask-image:linear-gradient(to_top,white,transparent)]" />
-          <div className="absolute w-40 h-full left-0 bg-background bottom-0 z-20 [mask-image:linear-gradient(to_right,white,transparent)]" />
-        </motion.div>
+      {/*
+        Lamp apparatus is absolutely pinned to the top so its vertical position
+        is fully deterministic. The visible beam line lands ~3rem from the top
+        (apparatus is centered in an h-80 box: 10rem center - 7rem line offset).
+        Because the content below lives in normal document flow, text wrapping on
+        any screen size only ever pushes content DOWN, never up into the beam.
+      */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-0 flex h-80 items-center justify-center">
+        <div className="relative flex w-full items-center justify-center scale-x-[0.6] scale-y-100 sm:scale-x-90 md:scale-x-100">
+          {/* Left conic beam */}
+          <motion.div
+            initial={{ opacity: 0.5, width: "15rem" }}
+            whileInView={{ opacity: 1, width: "30rem" }}
+            transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }}
+            style={{
+              backgroundImage:
+                "conic-gradient(from 70deg at center top, var(--primary), transparent, transparent)",
+            }}
+            className="absolute inset-auto right-1/2 h-56 w-[30rem] overflow-visible text-foreground"
+          >
+            <div className="absolute bottom-0 left-0 z-20 h-40 w-full bg-background [mask-image:linear-gradient(to_top,white,transparent)]" />
+            <div className="absolute bottom-0 left-0 z-20 h-full w-40 bg-background [mask-image:linear-gradient(to_right,white,transparent)]" />
+          </motion.div>
 
-        {/* Right conic beam */}
-        <motion.div
-          initial={{ opacity: 0.5, width: "15rem" }}
-          whileInView={{ opacity: 1, width: "30rem" }}
-          transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }}
-          style={{
-            backgroundImage:
-              "conic-gradient(from 290deg at center top, transparent, transparent, var(--primary))",
-          }}
-          className="absolute inset-auto left-1/2 h-56 w-[30rem] text-foreground"
-        >
-          <div className="absolute w-40 h-full right-0 bg-background bottom-0 z-20 [mask-image:linear-gradient(to_left,white,transparent)]" />
-          <div className="absolute w-full right-0 bg-background h-40 bottom-0 z-20 [mask-image:linear-gradient(to_top,white,transparent)]" />
-        </motion.div>
+          {/* Right conic beam */}
+          <motion.div
+            initial={{ opacity: 0.5, width: "15rem" }}
+            whileInView={{ opacity: 1, width: "30rem" }}
+            transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }}
+            style={{
+              backgroundImage:
+                "conic-gradient(from 290deg at center top, transparent, transparent, var(--primary))",
+            }}
+            className="absolute inset-auto left-1/2 h-56 w-[30rem] text-foreground"
+          >
+            <div className="absolute bottom-0 right-0 z-20 h-full w-40 bg-background [mask-image:linear-gradient(to_left,white,transparent)]" />
+            <div className="absolute bottom-0 right-0 z-20 h-40 w-full bg-background [mask-image:linear-gradient(to_top,white,transparent)]" />
+          </motion.div>
 
-        {/* Blur / glow stack */}
-        <div className="absolute top-1/2 h-48 w-full translate-y-12 scale-x-150 bg-background blur-2xl" />
-        <div className="absolute top-1/2 z-50 h-48 w-full bg-transparent opacity-10 backdrop-blur-md" />
-        <div className="absolute inset-auto z-50 h-36 w-[28rem] -translate-y-1/2 rounded-full bg-primary opacity-50 blur-3xl" />
+          {/* Blur / glow stack */}
+          <div className="absolute top-1/2 h-48 w-full translate-y-12 scale-x-150 bg-background blur-2xl" />
+          <div className="absolute top-1/2 z-50 h-48 w-full bg-transparent opacity-10 backdrop-blur-md" />
+          <div className="absolute inset-auto z-50 h-36 w-[28rem] -translate-y-1/2 rounded-full bg-primary opacity-50 blur-3xl" />
 
-        <motion.div
-          initial={{ width: "8rem" }}
-          whileInView={{ width: "16rem" }}
-          transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }}
-          className="absolute inset-auto z-30 h-36 w-64 -translate-y-[6rem] rounded-full bg-primary blur-2xl"
-        />
-        <motion.div
-          initial={{ width: "15rem" }}
-          whileInView={{ width: "30rem" }}
-          transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }}
-          className="absolute inset-auto z-50 h-0.5 w-[30rem] -translate-y-[7rem] bg-primary"
-        />
+          <motion.div
+            initial={{ width: "8rem" }}
+            whileInView={{ width: "16rem" }}
+            transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }}
+            className="absolute inset-auto z-30 h-36 w-64 -translate-y-[6rem] rounded-full bg-primary blur-2xl"
+          />
+          <motion.div
+            initial={{ width: "15rem" }}
+            whileInView={{ width: "30rem" }}
+            transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }}
+            className="absolute inset-auto z-50 h-0.5 w-[30rem] -translate-y-[7rem] bg-primary"
+          />
 
-        <div className="absolute inset-auto z-40 h-44 w-full -translate-y-[12.5rem] bg-background" />
+          {/* Mask covering everything above the beam line */}
+          <div className="absolute inset-auto z-40 h-44 w-full -translate-y-[12.5rem] bg-background" />
+        </div>
       </div>
 
-      <div className="relative z-50 flex -translate-y-[13rem] flex-col items-center px-5 sm:-translate-y-[15rem] md:-translate-y-[16rem]">
+      {/* Hero content lives in normal flow, sitting inside the light pool */}
+      <div className="relative z-50 flex flex-col items-center px-5">
         {children}
       </div>
     </div>

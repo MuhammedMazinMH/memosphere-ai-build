@@ -11,12 +11,12 @@ import { LampContainer } from '@/components/ui/lamp'
 export function Hero() {
   return (
     <section className="relative overflow-hidden">
-      <LampContainer className="min-h-[44rem] pt-28 pb-0 lg:min-h-[48rem] lg:pt-32">
+      <LampContainer className="pb-12 lg:pb-20">
         <motion.div
-          initial={{ opacity: 0.5, y: 100 }}
+          initial={{ opacity: 0.5, y: 80 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.8, ease: 'easeInOut' }}
-          className="mx-auto flex max-w-3xl flex-col items-center text-center"
+          className="mx-auto flex max-w-3xl flex-col items-center pt-[5.5rem] text-center sm:pt-24"
         >
           <Badge variant="secondary" className="gap-1.5 rounded-full px-3 py-1">
             <Sparkles className="size-3.5 text-primary" />
@@ -46,7 +46,7 @@ export function Hero() {
       </LampContainer>
 
       <div className="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24">
-        <div className="relative mx-auto -mt-24 max-w-5xl lg:-mt-32">
+        <div className="relative mx-auto max-w-5xl lg:-mt-12">
           <div className="overflow-hidden rounded-xl border border-border bg-card shadow-2xl shadow-primary/10">
             <DashboardPreview />
           </div>
