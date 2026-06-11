@@ -1,8 +1,8 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight, Play, Sparkles } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { DashboardPreview } from '@/components/marketing/dashboard-preview'
 
 export function Hero() {
   return (
@@ -54,22 +54,7 @@ export function Hero() {
 
         <div className="relative mx-auto mt-14 max-w-5xl">
           <div className="overflow-hidden rounded-xl border border-border bg-card shadow-2xl shadow-primary/10">
-            <Image
-              src="/dashboard-preview.png"
-              alt="MemoSphere AI dashboard showing knowledge analytics and subject overview"
-              width={1600}
-              height={1000}
-              priority
-              className="block w-full dark:hidden"
-            />
-            <Image
-              src="/dashboard-preview-dark.png"
-              alt="MemoSphere AI dashboard in dark mode showing knowledge analytics"
-              width={1600}
-              height={1000}
-              priority
-              className="hidden w-full dark:block"
-            />
+            <DashboardPreview />
           </div>
         </div>
       </div>
