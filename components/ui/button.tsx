@@ -51,6 +51,7 @@ function Button({
   return (
     <ButtonPrimitive
       data-slot="button"
+      suppressHydrationWarning
       render={render}
       nativeButton={nativeButton ?? (render ? false : undefined)}
       className={cn(buttonVariants({ variant, size, className }))}
