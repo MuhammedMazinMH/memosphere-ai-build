@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Logo } from '@/components/logo'
+import { TextHoverEffect } from '@/components/ui/hover-footer'
 
 const columns = [
   {
@@ -42,8 +43,8 @@ const columns = [
 
 export function MarketingFooter() {
   return (
-    <footer className="border-t border-border bg-muted/30">
-      <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <footer className="relative overflow-hidden border-t border-border bg-muted/30">
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid gap-8 lg:grid-cols-6">
           <div className="lg:col-span-2">
             <Logo />
@@ -77,6 +78,13 @@ export function MarketingFooter() {
           <p className="text-sm text-muted-foreground">
             Your Academic Second Brain
           </p>
+        </div>
+      </div>
+
+      {/* Giant brand text with hover reveal */}
+      <div className="pointer-events-none relative z-0 -mb-6 flex h-32 w-full items-end sm:h-44 lg:-mb-12 lg:h-56">
+        <div className="pointer-events-auto h-full w-full">
+          <TextHoverEffect text="MemoSphere" />
         </div>
       </div>
     </footer>
