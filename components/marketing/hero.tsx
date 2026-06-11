@@ -7,11 +7,13 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DashboardPreview } from '@/components/marketing/dashboard-preview'
 import { LampContainer } from '@/components/ui/lamp'
+import { HeroBackground } from '@/components/marketing/hero-background'
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden">
-      <LampContainer className="pb-12 lg:pb-20">
+    <section className="relative overflow-hidden bg-background">
+      <HeroBackground />
+      <LampContainer className="bg-transparent pb-12 lg:pb-20">
         <motion.div
           initial={{ opacity: 0.5, y: 80 }}
           whileInView={{ opacity: 1, y: 0 }}
