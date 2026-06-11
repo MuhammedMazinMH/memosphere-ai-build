@@ -20,6 +20,9 @@ export type Subject = {
   concepts: number
   mastery: number
   lastStudied: string
+  summaries: number
+  quizzes: number
+  topConcepts: { name: string; strength: number }[]
 }
 
 export type KnowledgeItem = {
@@ -46,6 +49,14 @@ export const subjects: Subject[] = [
     concepts: 142,
     mastery: 78,
     lastStudied: '2 hours ago',
+    summaries: 14,
+    quizzes: 9,
+    topConcepts: [
+      { name: 'Gradient Descent', strength: 88 },
+      { name: 'Neural Networks', strength: 76 },
+      { name: 'Regularization', strength: 64 },
+      { name: 'Support Vector Machines', strength: 52 },
+    ],
   },
   {
     id: 'bda',
@@ -57,6 +68,14 @@ export const subjects: Subject[] = [
     concepts: 96,
     mastery: 54,
     lastStudied: 'Yesterday',
+    summaries: 10,
+    quizzes: 5,
+    topConcepts: [
+      { name: 'Spark RDDs', strength: 70 },
+      { name: 'MapReduce', strength: 58 },
+      { name: 'HDFS', strength: 44 },
+      { name: 'Stream Processing', strength: 38 },
+    ],
   },
   {
     id: 'ai',
@@ -68,6 +87,14 @@ export const subjects: Subject[] = [
     concepts: 188,
     mastery: 65,
     lastStudied: '3 days ago',
+    summaries: 18,
+    quizzes: 11,
+    topConcepts: [
+      { name: 'A* Search', strength: 80 },
+      { name: 'Bayesian Networks', strength: 68 },
+      { name: 'Alpha-Beta Pruning', strength: 60 },
+      { name: 'Markov Decision Processes', strength: 40 },
+    ],
   },
   {
     id: 'ds',
@@ -79,6 +106,14 @@ export const subjects: Subject[] = [
     concepts: 74,
     mastery: 88,
     lastStudied: '5 days ago',
+    summaries: 7,
+    quizzes: 6,
+    topConcepts: [
+      { name: 'Hash Tables', strength: 97 },
+      { name: 'Binary Trees', strength: 90 },
+      { name: 'Dynamic Programming', strength: 82 },
+      { name: 'Graph Traversal', strength: 78 },
+    ],
   },
   {
     id: 'stats',
@@ -90,6 +125,14 @@ export const subjects: Subject[] = [
     concepts: 110,
     mastery: 42,
     lastStudied: '1 week ago',
+    summaries: 11,
+    quizzes: 4,
+    topConcepts: [
+      { name: 'Probability', strength: 60 },
+      { name: 'Distributions', strength: 50 },
+      { name: 'Hypothesis Testing', strength: 36 },
+      { name: 'Regression', strength: 30 },
+    ],
   },
   {
     id: 'dbms',
@@ -101,6 +144,14 @@ export const subjects: Subject[] = [
     concepts: 63,
     mastery: 71,
     lastStudied: '4 days ago',
+    summaries: 6,
+    quizzes: 5,
+    topConcepts: [
+      { name: 'Normalization', strength: 78 },
+      { name: 'Indexing', strength: 70 },
+      { name: 'Transactions', strength: 66 },
+      { name: 'Query Optimization', strength: 58 },
+    ],
   },
 ]
 

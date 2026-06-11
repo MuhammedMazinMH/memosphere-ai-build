@@ -20,12 +20,13 @@ import { Separator } from "@/components/ui/separator"
 import { FileTypeIcon, fileTypeLabel } from "@/components/dashboard/file-type-icon"
 import { knowledgeItems } from "@/lib/mock-data"
 
-export function generateMetadata({
+export async function generateMetadata({
   params,
 }: {
-  params: { id: string }
-}): Metadata {
-  const item = knowledgeItems.find((k) => k.id === params.id)
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
+  const item = knowledgeItems.find((k) => k.id === id)
   return { title: item ? item.title : "Document" }
 }
 

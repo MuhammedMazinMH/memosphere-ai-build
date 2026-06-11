@@ -40,7 +40,7 @@ const mainNav = [
 
 const aiNav = [
   { title: "Summary Center", href: "/dashboard/summaries", icon: Sparkles },
-  { title: "Quiz Generator", href: "/dashboard/quizzes", icon: ListChecks },
+  { title: "Quiz Generator", href: "/dashboard/quiz", icon: ListChecks },
   { title: "Knowledge Graph", href: "/dashboard/graph", icon: Network },
 ]
 
