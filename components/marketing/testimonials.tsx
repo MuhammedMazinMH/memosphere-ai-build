@@ -145,14 +145,16 @@ export function Testimonials() {
               )
             })}
           </div>
+        </div>
 
-          {/* Navigation arrows */}
+        {/* Navigation arrows */}
+        <div className="mt-10 flex items-center justify-center gap-4">
           <button
             onClick={() => {
               prev()
               setIsAutoPlay(false)
             }}
-            className="absolute left-1/2 bottom-0 -translate-x-16 -translate-y-20 rounded border border-muted-foreground/40 bg-background/80 p-3 text-muted-foreground transition-all hover:border-primary/60 hover:text-primary hover:bg-primary/5 sm:left-1/2"
+            className="rounded border border-muted-foreground/40 bg-background/80 p-3 text-muted-foreground transition-all hover:border-primary/60 hover:text-primary hover:bg-primary/5"
             aria-label="Previous testimonial"
           >
             <ChevronLeft className="size-5" />
@@ -162,7 +164,7 @@ export function Testimonials() {
               next()
               setIsAutoPlay(false)
             }}
-            className="absolute left-1/2 bottom-0 translate-x-4 -translate-y-20 rounded border border-muted-foreground/40 bg-background/80 p-3 text-muted-foreground transition-all hover:border-primary/60 hover:text-primary hover:bg-primary/5"
+            className="rounded border border-muted-foreground/40 bg-background/80 p-3 text-muted-foreground transition-all hover:border-primary/60 hover:text-primary hover:bg-primary/5"
             aria-label="Next testimonial"
           >
             <ChevronRight className="size-5" />
@@ -170,7 +172,7 @@ export function Testimonials() {
         </div>
 
         {/* Dot indicators */}
-        <div className="mt-12 flex justify-center gap-2">
+        <div className="mt-8 flex justify-center gap-2">
           {testimonials.map((_, i) => (
             <button
               key={i}
