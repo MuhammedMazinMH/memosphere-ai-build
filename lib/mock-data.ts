@@ -331,36 +331,136 @@ export const learningGaps: GapTopic[] = [
   { name: 'Hash Tables', subject: 'Data Structures', status: 'mastered', progress: 97 },
 ]
 
+export type ConceptStatus = 'core' | 'emerging' | 'weak' | 'connected'
+export type ConceptDifficulty = 'foundational' | 'intermediate' | 'advanced'
+
 export type Concept = {
   id: string
   label: string
-  group: string
+  group: 'subject' | 'core' | 'concept' | 'document'
+  subject?: string
+  mastery?: number
+  importance?: number
+  frequency?: number
+  status?: ConceptStatus
+  difficulty?: ConceptDifficulty
+  recent?: boolean
 }
-export type Edge = { source: string; target: string }
+export type Edge = { source: string; target: string; strength?: number }
 
 export const graphConcepts: Concept[] = [
-  { id: 'regression', label: 'Regression', group: 'core' },
-  { id: 'statistics', label: 'Statistics', group: 'subject' },
-  { id: 'ml', label: 'Machine Learning', group: 'subject' },
-  { id: 'datascience', label: 'Data Science', group: 'subject' },
-  { id: 'gradient', label: 'Gradient Descent', group: 'concept' },
-  { id: 'probability', label: 'Probability', group: 'concept' },
-  { id: 'neural', label: 'Neural Networks', group: 'concept' },
-  { id: 'overfitting', label: 'Overfitting', group: 'concept' },
-  { id: 'bayes', label: 'Bayes Theorem', group: 'concept' },
+  // Subjects
+  { id: 'ml', label: 'Machine Learning', group: 'subject', subject: 'Machine Learning', mastery: 78, importance: 95, frequency: 142, status: 'connected', difficulty: 'intermediate' },
+  { id: 'stats', label: 'Statistics', group: 'subject', subject: 'Statistics', mastery: 42, importance: 88, frequency: 110, status: 'weak', difficulty: 'foundational' },
+  { id: 'ai', label: 'Artificial Intelligence', group: 'subject', subject: 'Artificial Intelligence', mastery: 65, importance: 90, frequency: 188, status: 'connected', difficulty: 'advanced' },
+  { id: 'ds', label: 'Data Structures', group: 'subject', subject: 'Data Structures', mastery: 88, importance: 80, frequency: 74, status: 'core', difficulty: 'intermediate' },
+  // Core concepts
+  { id: 'regression', label: 'Regression', group: 'core', subject: 'Statistics', mastery: 72, importance: 92, frequency: 64, status: 'core', difficulty: 'foundational', recent: true },
+  { id: 'optimization', label: 'Optimization', group: 'core', subject: 'Machine Learning', mastery: 70, importance: 90, frequency: 58, status: 'core', difficulty: 'intermediate' },
+  // Concepts
+  { id: 'gradient', label: 'Gradient Descent', group: 'concept', subject: 'Machine Learning', mastery: 88, importance: 85, frequency: 70, status: 'connected', difficulty: 'intermediate', recent: true },
+  { id: 'neural', label: 'Neural Networks', group: 'concept', subject: 'Machine Learning', mastery: 76, importance: 88, frequency: 64, status: 'emerging', difficulty: 'advanced', recent: true },
+  { id: 'overfitting', label: 'Overfitting', group: 'concept', subject: 'Machine Learning', mastery: 64, importance: 70, frequency: 40, status: 'emerging', difficulty: 'intermediate' },
+  { id: 'svm', label: 'Support Vector Machines', group: 'concept', subject: 'Machine Learning', mastery: 52, importance: 60, frequency: 30, status: 'weak', difficulty: 'advanced' },
+  { id: 'classification', label: 'Classification', group: 'concept', subject: 'Machine Learning', mastery: 58, importance: 78, frequency: 44, status: 'emerging', difficulty: 'intermediate', recent: true },
+  { id: 'probability', label: 'Probability', group: 'concept', subject: 'Statistics', mastery: 60, importance: 80, frequency: 50, status: 'connected', difficulty: 'foundational' },
+  { id: 'bayes', label: 'Bayes Theorem', group: 'concept', subject: 'Statistics', mastery: 50, importance: 72, frequency: 38, status: 'emerging', difficulty: 'intermediate' },
+  { id: 'hypothesis', label: 'Hypothesis Testing', group: 'concept', subject: 'Statistics', mastery: 28, importance: 75, frequency: 18, status: 'weak', difficulty: 'intermediate' },
+  { id: 'search', label: 'A* Search', group: 'concept', subject: 'Artificial Intelligence', mastery: 80, importance: 70, frequency: 60, status: 'core', difficulty: 'intermediate' },
+  { id: 'bayesnet', label: 'Bayesian Networks', group: 'concept', subject: 'Artificial Intelligence', mastery: 68, importance: 74, frequency: 38, status: 'emerging', difficulty: 'advanced' },
+  { id: 'trees', label: 'Binary Trees', group: 'concept', subject: 'Data Structures', mastery: 90, importance: 65, frequency: 50, status: 'core', difficulty: 'foundational' },
+  { id: 'dp', label: 'Dynamic Programming', group: 'concept', subject: 'Data Structures', mastery: 82, importance: 68, frequency: 42, status: 'core', difficulty: 'advanced' },
+  // Documents
+  { id: 'doc-gd', label: 'Gradient Descent.pdf', group: 'document', subject: 'Machine Learning', mastery: 0, importance: 40, frequency: 6, difficulty: 'intermediate', recent: true },
+  { id: 'doc-ht', label: 'Hypothesis Testing.pdf', group: 'document', subject: 'Statistics', mastery: 0, importance: 40, frequency: 3, difficulty: 'intermediate' },
+  { id: 'doc-as', label: 'A* Search Notes', group: 'document', subject: 'Artificial Intelligence', mastery: 0, importance: 40, frequency: 4, difficulty: 'intermediate' },
 ]
 
 export const graphEdges: Edge[] = [
-  { source: 'regression', target: 'statistics' },
-  { source: 'regression', target: 'ml' },
-  { source: 'regression', target: 'datascience' },
-  { source: 'ml', target: 'gradient' },
-  { source: 'ml', target: 'neural' },
-  { source: 'ml', target: 'overfitting' },
-  { source: 'statistics', target: 'probability' },
-  { source: 'statistics', target: 'bayes' },
-  { source: 'datascience', target: 'probability' },
+  // Subject -> concept
+  { source: 'ml', target: 'gradient', strength: 90 },
+  { source: 'ml', target: 'neural', strength: 82 },
+  { source: 'ml', target: 'overfitting', strength: 70 },
+  { source: 'ml', target: 'svm', strength: 55 },
+  { source: 'ml', target: 'classification', strength: 64 },
+  { source: 'ml', target: 'optimization', strength: 88 },
+  { source: 'stats', target: 'regression', strength: 80 },
+  { source: 'stats', target: 'probability', strength: 75 },
+  { source: 'stats', target: 'bayes', strength: 60 },
+  { source: 'stats', target: 'hypothesis', strength: 45 },
+  { source: 'ai', target: 'search', strength: 80 },
+  { source: 'ai', target: 'bayesnet', strength: 66 },
+  { source: 'ds', target: 'trees', strength: 92 },
+  { source: 'ds', target: 'dp', strength: 82 },
+  // Cross links
+  { source: 'regression', target: 'ml', strength: 85 },
+  { source: 'regression', target: 'optimization', strength: 78 },
+  { source: 'optimization', target: 'gradient', strength: 86 },
+  { source: 'optimization', target: 'neural', strength: 70 },
+  { source: 'gradient', target: 'neural', strength: 75 },
+  { source: 'probability', target: 'bayes', strength: 72 },
+  { source: 'bayes', target: 'bayesnet', strength: 64 },
+  { source: 'classification', target: 'svm', strength: 58 },
+  { source: 'classification', target: 'neural', strength: 60 },
+  { source: 'probability', target: 'classification', strength: 50 },
+  { source: 'regression', target: 'classification', strength: 55 },
+  // Documents
+  { source: 'doc-gd', target: 'gradient', strength: 90 },
+  { source: 'doc-ht', target: 'hypothesis', strength: 88 },
+  { source: 'doc-as', target: 'search', strength: 85 },
 ]
+
+export const conceptJourney = ['regression', 'gradient', 'optimization', 'neural']
+
+export type StudyPathStatus = 'done' | 'current' | 'next' | 'locked'
+export type StudyPathStep = { label: string; subject: string; status: StudyPathStatus }
+
+export const aiCoach = {
+  nextTopic: {
+    mastered: 'Linear Regression',
+    recommended: 'Logistic Regression',
+    subject: 'Machine Learning',
+    reason:
+      "You've mastered Linear Regression (95%). Logistic Regression builds directly on it and unlocks the Classification track.",
+    confidence: 91,
+  },
+  weakAreas: [
+    { name: 'Hypothesis Testing', subject: 'Statistics', confidence: 28 },
+    { name: 'Markov Decision Processes', subject: 'Artificial Intelligence', confidence: 20 },
+    { name: 'Support Vector Machines', subject: 'Machine Learning', confidence: 52 },
+  ],
+  knowledgeGaps: [
+    { subject: 'Machine Learning', missing: ['Ensemble Methods', 'Feature Engineering'] },
+    { subject: 'Statistics', missing: ['ANOVA', 'Bayesian Inference'] },
+    { subject: 'Big Data Analytics', missing: ['Stream Windowing', 'Lambda Architecture'] },
+  ],
+  studyPath: [
+    { label: 'Statistics', subject: 'Foundations', status: 'done' },
+    { label: 'Regression', subject: 'Machine Learning', status: 'done' },
+    { label: 'Classification', subject: 'Machine Learning', status: 'current' },
+    { label: 'Neural Networks', subject: 'Deep Learning', status: 'next' },
+  ] as StudyPathStep[],
+  examReadiness: {
+    current: 72,
+    potential: 85,
+    hoursNeeded: 8,
+    examName: 'GATE 2026',
+  },
+}
+
+export const learningIntelligence = {
+  mostStudied: { concept: 'Gradient Descent', subject: 'Machine Learning', sessions: 24 },
+  weakest: { concept: 'Hypothesis Testing', subject: 'Statistics', mastery: 28 },
+  fastestImproving: { subject: 'Machine Learning', delta: 12 },
+  consistency: 86,
+  coverage: 68,
+  aiConfidence: 74,
+  weeklyInsights: [
+    'You improved Machine Learning mastery by 12% this week.',
+    'Statistics is your weakest area — 3 concepts need review before your exam.',
+    'A 14-day streak makes this your most consistent month yet.',
+  ],
+}
 
 export type QuizQuestion = {
   id: string

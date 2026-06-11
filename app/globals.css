@@ -128,3 +128,32 @@
     @apply font-sans;
   }
 }
+
+@keyframes edge-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+.edge-flow {
+  stroke-dasharray: 6 6;
+  animation: edge-flow 0.9s linear infinite;
+}
+
+@keyframes node-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+
+.node-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: node-pulse 2s ease-out infinite;
+}

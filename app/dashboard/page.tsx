@@ -7,6 +7,8 @@ import { PageHeader } from "@/components/dashboard/page-header"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { KnowledgeGrowthChart } from "@/components/dashboard/knowledge-growth-chart"
 import { StudyActivityChart } from "@/components/dashboard/study-activity-chart"
+import { AICoachWidget } from "@/components/dashboard/ai-coach-widget"
+import { LearningIntelligence } from "@/components/dashboard/learning-intelligence"
 import { SubjectCard } from "@/components/dashboard/subject-card"
 import { ActivityFeed } from "@/components/dashboard/activity-feed"
 import { subjects, user } from "@/lib/mock-data"
@@ -35,10 +37,14 @@ export default function DashboardPage() {
         <StatCard label="Avg. mastery" value="66%" change="+8% this month" icon={Target} />
       </div>
 
+      <AICoachWidget />
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <KnowledgeGrowthChart />
         <StudyActivityChart />
       </div>
+
+      <LearningIntelligence />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-4 lg:col-span-2">

@@ -45,6 +45,7 @@ const aiNav = [
 ]
 
 const insightsNav = [
+  { title: "AI Learning Coach", href: "/dashboard/ai-coach", icon: Sparkles },
   { title: "Learning Gaps", href: "/dashboard/gaps", icon: TrendingUp },
   { title: "Exam Readiness", href: "/dashboard/exam-readiness", icon: GraduationCap },
 ]

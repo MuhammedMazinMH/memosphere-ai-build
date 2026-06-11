@@ -52,7 +52,7 @@ export function UniversalSearchView() {
       }))
 
     const concepts: SearchResult[] = graphConcepts
-      .filter((c) => c.label.toLowerCase().includes(q))
+      .filter((c) => c.group !== "document" && c.label.toLowerCase().includes(q))
       .map((c) => ({
         id: c.id,
         kind: "concept",
@@ -82,7 +82,7 @@ export function UniversalSearchView() {
     if (!q) return { document: 0, concept: 0, subject: 0 }
     return {
       document: knowledgeItems.filter((d) => d.title.toLowerCase().includes(q) || d.excerpt.toLowerCase().includes(q)).length,
-      concept: graphConcepts.filter((c) => c.label.toLowerCase().includes(q)).length,
+      concept: graphConcepts.filter((c) => c.group !== "document" && c.label.toLowerCase().includes(q)).length,
       subject: subjects.filter((s) => s.name.toLowerCase().includes(q)).length,
     }
   }, [query])
