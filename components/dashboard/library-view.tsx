@@ -29,9 +29,13 @@ import {
 } from "@/components/ui/empty"
 import { UploadDialog } from "@/components/dashboard/upload-dialog"
 import { FileTypeIcon, fileTypeLabel } from "@/components/dashboard/file-type-icon"
-import { knowledgeItems, subjects, type FileType } from "@/lib/mock-data"
+import { documentService, subjectService } from "@/lib/services"
+import type { FileType } from "@/types"
 import { Upload, FileSearch } from "lucide-react"
 import { cn } from "@/lib/utils"
+
+const knowledgeItems = documentService.getDocuments()
+const subjects = subjectService.getSubjects()
 
 const types: { value: FileType | "all"; label: string }[] = [
   { value: "all", label: "All" },

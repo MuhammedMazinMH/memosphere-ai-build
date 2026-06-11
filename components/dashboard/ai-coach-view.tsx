@@ -18,7 +18,10 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
-import { aiCoach, type StudyPathStatus } from "@/lib/mock-data"
+import { recommendationService } from "@/lib/services"
+import type { StudyPathStatus } from "@/types"
+
+const aiCoach = recommendationService.getRecommendations()
 
 const stepIcon: Record<StudyPathStatus, typeof CircleDot> = {
   done: CircleCheck,

@@ -14,7 +14,9 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
-import { knowledgeGrowth } from "@/lib/mock-data"
+import { analyticsService } from "@/lib/services"
+
+const knowledgeGrowth = analyticsService.getKnowledgeGrowth()
 
 const config = {
   concepts: { label: "Concepts", color: "var(--chart-1)" },

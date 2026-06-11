@@ -8,7 +8,10 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { learningGaps, type GapTopic } from "@/lib/mock-data"
+import { learningGapService } from "@/lib/services"
+import type { GapTopic } from "@/types"
+
+const learningGaps = learningGapService.getGaps()
 
 type StatusKey = GapTopic["status"]
 

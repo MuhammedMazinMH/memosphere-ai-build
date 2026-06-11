@@ -19,7 +19,9 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import { cn } from "@/lib/utils"
-import { examReadiness } from "@/lib/mock-data"
+import { examReadinessService } from "@/lib/services"
+
+const examReadiness = examReadinessService.getReadiness()
 
 const config = {
   coverage: { label: "Coverage", color: "var(--chart-1)" },

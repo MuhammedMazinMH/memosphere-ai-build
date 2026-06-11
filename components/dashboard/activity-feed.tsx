@@ -6,7 +6,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { recentActivity, type Activity } from "@/lib/mock-data"
+import { analyticsService } from "@/lib/services"
+import type { Activity } from "@/types"
+
+const recentActivity = analyticsService.getRecentActivity()
 
 const iconMap = {
   upload: Upload,

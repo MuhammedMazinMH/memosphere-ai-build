@@ -11,7 +11,11 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty"
 import { FileTypeIcon } from "@/components/dashboard/file-type-icon"
 import { PageHeader } from "@/components/dashboard/page-header"
-import { knowledgeItems, subjects, graphConcepts } from "@/lib/mock-data"
+import { documentService, subjectService, knowledgeGraphService } from "@/lib/services"
+
+const knowledgeItems = documentService.getDocuments()
+const subjects = subjectService.getSubjects()
+const graphConcepts = knowledgeGraphService.getConcepts()
 
 type ResultKind = "all" | "document" | "concept" | "subject"
 

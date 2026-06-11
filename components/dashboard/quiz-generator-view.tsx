@@ -20,8 +20,11 @@ import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
-import { subjects, quizQuestions } from "@/lib/mock-data"
+import { subjectService, quizService } from "@/lib/services"
 import { toast } from "sonner"
+
+const subjects = subjectService.getSubjects()
+const quizQuestions = quizService.getQuestions()
 
 type Stage = "setup" | "loading" | "active" | "result"
 

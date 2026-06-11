@@ -9,7 +9,9 @@ import {
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { learningIntelligence as li } from "@/lib/mock-data"
+import { recommendationService } from "@/lib/services"
+
+const li = recommendationService.getLearningIntelligence()
 
 function HighlightCard({
   icon: Icon,

@@ -1,5 +1,5 @@
 import { FileText, StickyNote, ImageIcon, Presentation, Video } from "lucide-react"
-import type { FileType } from "@/lib/mock-data"
+import type { FileType } from "@/types"
 
 const map = {
   pdf: { icon: FileText, color: "var(--chart-1)", label: "PDF" },

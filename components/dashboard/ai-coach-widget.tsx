@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { aiCoach } from "@/lib/mock-data"
+import { recommendationService } from "@/lib/services"
+
+const aiCoach = recommendationService.getRecommendations()
 
 export function AICoachWidget() {
   const { nextTopic, weakAreas, examReadiness } = aiCoach

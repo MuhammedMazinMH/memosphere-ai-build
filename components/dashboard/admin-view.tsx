@@ -19,8 +19,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { adminStats } from "@/lib/mock-data"
+import { analyticsService } from "@/lib/services"
 import { PageHeader } from "@/components/dashboard/page-header"
+
+const adminStats = analyticsService.getAdminStats()
 
 const growthConfig = {
   users: { label: "Users", color: "var(--chart-1)" },

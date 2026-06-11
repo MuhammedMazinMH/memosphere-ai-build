@@ -11,8 +11,10 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { FileTypeIcon } from "@/components/dashboard/file-type-icon"
-import { knowledgeItems } from "@/lib/mock-data"
+import { documentService } from "@/lib/services"
 import { toast } from "sonner"
+
+const knowledgeItems = documentService.getDocuments()
 
 type Length = "brief" | "standard" | "detailed"
 

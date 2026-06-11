@@ -23,7 +23,12 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
-import { graphConcepts, graphEdges, conceptJourney, type Concept } from "@/lib/mock-data"
+import { knowledgeGraphService } from "@/lib/services"
+import type { Concept } from "@/types"
+
+const graphConcepts = knowledgeGraphService.getConcepts()
+const graphEdges = knowledgeGraphService.getConnections()
+const conceptJourney = knowledgeGraphService.getJourney()
 
 const W = 820
 const H = 580

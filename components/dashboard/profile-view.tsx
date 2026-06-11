@@ -17,8 +17,10 @@ import {
   FieldLabel,
   FieldDescription,
 } from "@/components/ui/field"
-import { user } from "@/lib/mock-data"
+import { authService } from "@/lib/services"
 import { PageHeader } from "@/components/dashboard/page-header"
+
+const user = authService.getCurrentUser()
 
 const notifications = [
   { id: "weekly", label: "Weekly progress digest", desc: "A summary of what you studied each week.", on: true },

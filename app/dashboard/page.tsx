@@ -11,7 +11,10 @@ import { AICoachWidget } from "@/components/dashboard/ai-coach-widget"
 import { LearningIntelligence } from "@/components/dashboard/learning-intelligence"
 import { SubjectCard } from "@/components/dashboard/subject-card"
 import { ActivityFeed } from "@/components/dashboard/activity-feed"
-import { subjects, user } from "@/lib/mock-data"
+import { subjectService, authService } from "@/lib/services"
+
+const subjects = subjectService.getSubjects()
+const user = authService.getCurrentUser()
 
 export const metadata: Metadata = {
   title: "Dashboard",

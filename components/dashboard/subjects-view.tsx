@@ -3,7 +3,10 @@
 import { useState } from "react"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { SubjectCard } from "@/components/dashboard/subject-card"
-import { subjects as initialSubjects, type Subject } from "@/lib/mock-data"
+import { subjectService } from "@/lib/services"
+import type { Subject } from "@/types"
+
+const initialSubjects = subjectService.getSubjects()
 
 export function SubjectsView() {
   const [subjects] = useState<Subject[]>(initialSubjects)

@@ -19,7 +19,9 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { user } from "@/lib/mock-data"
+import { authService } from "@/lib/services"
+
+const user = authService.getCurrentUser()
 
 export function UserMenu() {
   const router = useRouter()

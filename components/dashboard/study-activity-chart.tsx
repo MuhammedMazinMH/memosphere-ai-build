@@ -14,7 +14,9 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
-import { studyActivity } from "@/lib/mock-data"
+import { analyticsService } from "@/lib/services"
+
+const studyActivity = analyticsService.getStudyActivity()
 
 const config = {
   minutes: { label: "Minutes", color: "var(--chart-1)" },

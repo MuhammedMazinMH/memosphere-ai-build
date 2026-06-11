@@ -2,7 +2,7 @@ import Link from "next/link"
 import { ArrowUpRight } from "lucide-react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import type { Subject } from "@/lib/mock-data"
+import type { Subject } from "@/types"
 
 export function SubjectCard({ subject }: { subject: Subject }) {
   const Icon = subject.icon

@@ -15,8 +15,10 @@ import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { UploadCloud, FileText, CheckCircle2 } from "lucide-react"
-import { subjects } from "@/lib/mock-data"
+import { subjectService } from "@/lib/services"
 import { toast } from "sonner"
+
+const subjects = subjectService.getSubjects()
 
 export function UploadDialog({ trigger }: { trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false)
