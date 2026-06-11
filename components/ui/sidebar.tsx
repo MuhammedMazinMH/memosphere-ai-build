@@ -285,6 +285,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
       data-sidebar="rail"
       data-slot="sidebar-rail"
       aria-label="Toggle Sidebar"
+      suppressHydrationWarning
       tabIndex={-1}
       onClick={toggleSidebar}
       title="Toggle Sidebar"
@@ -427,6 +428,7 @@ function SidebarGroupAction({
           "absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground ring-sidebar-ring outline-hidden transition-transform group-data-[collapsible=icon]:hidden after:absolute after:-inset-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 md:after:hidden [&>svg]:size-4 [&>svg]:shrink-0",
           className
         ),
+        suppressHydrationWarning: true,
       },
       props
     ),
@@ -515,6 +517,7 @@ function SidebarMenuButton({
     props: mergeProps<"button">(
       {
         className: cn(sidebarMenuButtonVariants({ variant, size }), className),
+        suppressHydrationWarning: true,
       },
       props
     ),
@@ -569,6 +572,7 @@ function SidebarMenuAction({
             "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 peer-data-active/menu-button:text-sidebar-accent-foreground aria-expanded:opacity-100 md:opacity-0",
           className
         ),
+        suppressHydrationWarning: true,
       },
       props
     ),
