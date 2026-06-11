@@ -2,13 +2,12 @@
 
 import { useState } from "react"
 import { toast } from "sonner"
-import { User, Bell, CreditCard, Shield, Flame, Target, Trash2 } from "lucide-react"
+import { User, Bell, Shield, Flame, Target, Trash2 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
@@ -37,7 +36,7 @@ export function ProfileView() {
     <Tabs defaultValue="profile" className="gap-6">
       <PageHeader
         title="Profile & Settings"
-        description="Manage your account, notifications, billing, and security."
+        description="Manage your account, notifications, and security."
       />
       <TabsList>
         <TabsTrigger value="profile">
@@ -47,10 +46,6 @@ export function ProfileView() {
         <TabsTrigger value="notifications">
           <Bell data-icon="inline-start" />
           Notifications
-        </TabsTrigger>
-        <TabsTrigger value="billing">
-          <CreditCard data-icon="inline-start" />
-          Billing
         </TabsTrigger>
         <TabsTrigger value="security">
           <Shield data-icon="inline-start" />
@@ -155,30 +150,6 @@ export function ProfileView() {
                 </div>
               </div>
             ))}
-          </CardContent>
-        </Card>
-      </TabsContent>
-
-      <TabsContent value="billing">
-        <Card>
-          <CardHeader>
-            <CardTitle>Plan & billing</CardTitle>
-            <CardDescription>Manage your subscription.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex items-center justify-between rounded-lg border border-border bg-muted/40 p-4">
-              <div className="flex items-center gap-3">
-                <Badge>{user.plan}</Badge>
-                <div>
-                  <p className="font-medium">MemoSphere Pro</p>
-                  <p className="text-sm text-muted-foreground">$12 / month, billed annually</p>
-                </div>
-              </div>
-              <Button variant="outline">Manage plan</Button>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              Your next invoice is on July 1, 2026. You can cancel anytime.
-            </div>
           </CardContent>
         </Card>
       </TabsContent>

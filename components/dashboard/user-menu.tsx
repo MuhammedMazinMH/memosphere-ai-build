@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { ChevronsUpDown, LogOut, User, CreditCard, Sparkles } from "lucide-react"
+import { ChevronsUpDown, LogOut, User } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -71,17 +70,12 @@ export function UserMenu() {
                       {user.email}
                     </span>
                   </div>
-                  <Badge variant="secondary" className="ml-auto">
-                    {user.plan}
-                  </Badge>
                 </div>
               </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem render={<Link href="/dashboard/profile"><User />Profile</Link>} />
-              <DropdownMenuItem render={<Link href="/dashboard/profile"><CreditCard />Billing</Link>} />
-              <DropdownMenuItem render={<Link href="/#pricing"><Sparkles />Upgrade plan</Link>} />
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push("/")}>
