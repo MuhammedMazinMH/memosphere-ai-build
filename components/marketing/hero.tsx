@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, Play, Sparkles } from 'lucide-react'
+import { ArrowRight, Sparkles } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DashboardPreview } from '@/components/marketing/dashboard-preview'
@@ -36,20 +36,7 @@ export function Hero() {
                 </Link>
               }
             />
-            <Button
-              size="lg"
-              variant="outline"
-              render={
-                <Link href="/dashboard">
-                  <Play data-icon="inline-start" />
-                  Watch Demo
-                </Link>
-              }
-            />
           </div>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Free forever plan. No credit card required.
-          </p>
         </div>
 
         <div className="relative mx-auto mt-14 max-w-5xl">
