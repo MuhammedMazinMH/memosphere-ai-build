@@ -9,6 +9,7 @@ import {
   Flame,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { GlowCard } from '@/components/ui/spotlight-card'
 
 const features = [
   {
@@ -72,10 +73,12 @@ export function Features() {
         </div>
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((f) => (
-            <div
+            <GlowCard
               key={f.title}
+              glowColor="indigo"
+              customSize
               className={cn(
-                'group rounded-xl border border-border bg-card p-6 transition-colors hover:border-primary/40',
+                'group !block h-full rounded-xl border-border bg-card p-6 !backdrop-blur-none',
                 f.className,
               )}
             >
@@ -86,7 +89,7 @@ export function Features() {
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 {f.text}
               </p>
-            </div>
+            </GlowCard>
           ))}
         </div>
       </div>
