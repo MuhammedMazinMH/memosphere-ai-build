@@ -15,6 +15,7 @@ import { PageHeader } from "@/components/dashboard/page-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
@@ -24,27 +25,39 @@ import { toast } from "sonner"
 
 type Stage = "setup" | "loading" | "active" | "result"
 
+const difficulties = ["Easy", "Medium", "Hard", "Mixed"] as const
+const formats = ["Multiple choice", "True or False", "Mixed"] as const
+
+const maxAvailable = quizQuestions.length
+
 export function QuizGeneratorView() {
   const [stage, setStage] = useState<Stage>("setup")
   const [subject, setSubject] = useState(subjects[0].id)
+  const [count, setCount] = useState(5)
+  const [difficulty, setDifficulty] = useState<string>("Mixed")
+  const [format, setFormat] = useState<string>("Multiple choice")
+  const [quiz, setQuiz] = useState<typeof quizQuestions>(quizQuestions)
   const [current, setCurrent] = useState(0)
   const [selected, setSelected] = useState<number | null>(null)
   const [revealed, setRevealed] = useState(false)
   const [answers, setAnswers] = useState<boolean[]>([])
 
-  const question = quizQuestions[current]
-  const total = quizQuestions.length
+  const question = quiz[current]
+  const total = quiz.length
   const score = answers.filter(Boolean).length
 
   function start() {
+    const safeCount = Math.min(Math.max(count, 1), maxAvailable)
+    const selectedQuestions = quizQuestions.slice(0, safeCount)
     setStage("loading")
     setTimeout(() => {
+      setQuiz(selectedQuestions)
       setStage("active")
       setCurrent(0)
       setSelected(null)
       setRevealed(false)
       setAnswers([])
-      toast.success("Quiz ready — good luck!")
+      toast.success(`Quiz ready — ${selectedQuestions.length} ${difficulty.toLowerCase()} questions. Good luck!`)
     }, 1500)
   }
 
@@ -99,20 +112,60 @@ export function QuizGeneratorView() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-lg border bg-muted/40 p-3 text-center">
-                <p className="text-lg font-semibold">{total}</p>
-                <p className="text-xs text-muted-foreground">Questions</p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="flex flex-col gap-2">
+                <span className="text-sm font-medium">Questions</span>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={maxAvailable}
+                  value={count}
+                  onChange={(e) => {
+                    const v = Number.parseInt(e.target.value, 10)
+                    setCount(Number.isNaN(v) ? 1 : Math.min(Math.max(v, 1), maxAvailable))
+                  }}
+                  aria-label="Number of questions"
+                />
               </div>
-              <div className="rounded-lg border bg-muted/40 p-3 text-center">
-                <p className="text-lg font-semibold">Mixed</p>
-                <p className="text-xs text-muted-foreground">Difficulty</p>
+              <div className="flex flex-col gap-2">
+                <span className="text-sm font-medium">Difficulty</span>
+                <Select value={difficulty} onValueChange={setDifficulty}>
+                  <SelectTrigger aria-label="Difficulty">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {difficulties.map((d) => (
+                        <SelectItem key={d} value={d}>
+                          {d}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="rounded-lg border bg-muted/40 p-3 text-center">
-                <p className="text-lg font-semibold">MCQ</p>
-                <p className="text-xs text-muted-foreground">Format</p>
+              <div className="flex flex-col gap-2">
+                <span className="text-sm font-medium">Format</span>
+                <Select value={format} onValueChange={setFormat}>
+                  <SelectTrigger aria-label="Format">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {formats.map((f) => (
+                        <SelectItem key={f} value={f}>
+                          {f}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Up to {maxAvailable} questions available from your current materials.
+            </p>
           </CardContent>
           <CardFooter>
             <Button onClick={start} className="w-full">

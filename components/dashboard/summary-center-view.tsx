@@ -33,6 +33,8 @@ export function SummaryCenterView() {
 
   const doc = knowledgeItems.find((k) => k.id === selectedDoc)!
   const bulletCount = length === "brief" ? 3 : length === "standard" ? 4 : 5
+  const keyTerms = ["Loss function", "Learning rate", "Momentum", "Adam", "Convergence", "Mini-batch"]
+  const overview = `This ${doc.type} introduces the foundations of optimization in machine learning, focusing on how models iteratively improve through gradient-based methods. It connects theory to practical training considerations.`
 
   function generate() {
     setLoading(true)
@@ -44,10 +46,27 @@ export function SummaryCenterView() {
     }, 1600)
   }
 
-  function copy() {
-    setCopied(true)
-    toast.success("Copied to clipboard")
-    setTimeout(() => setCopied(false), 1500)
+  async function copy() {
+    const text = [
+      `${doc.title} — AI Summary`,
+      "",
+      "Overview",
+      overview,
+      "",
+      "Key Points",
+      ...summaryBullets.slice(0, bulletCount).map((b) => `• ${b}`),
+      "",
+      `Key Terms: ${keyTerms.join(", ")}`,
+    ].join("\n")
+
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      toast.success("Copied to clipboard")
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      toast.error("Couldn't copy. Please try again.")
+    }
   }
 
   return (
@@ -158,11 +177,7 @@ export function SummaryCenterView() {
                     <AlignLeft className="size-4" />
                     Overview
                   </div>
-                  <p className="leading-relaxed text-pretty">
-                    This {doc.type} introduces the foundations of optimization in machine learning,
-                    focusing on how models iteratively improve through gradient-based methods. It connects
-                    theory to practical training considerations.
-                  </p>
+                  <p className="leading-relaxed text-pretty">{overview}</p>
                 </section>
 
                 <section className="flex flex-col gap-3">
@@ -186,7 +201,7 @@ export function SummaryCenterView() {
                     Key Terms
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {["Loss function", "Learning rate", "Momentum", "Adam", "Convergence", "Mini-batch"].map((t) => (
+                    {keyTerms.map((t) => (
                       <Badge key={t} variant="secondary">
                         {t}
                       </Badge>

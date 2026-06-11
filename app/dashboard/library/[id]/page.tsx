@@ -3,8 +3,6 @@ import Link from "next/link"
 import type { Metadata } from "next"
 import {
   ArrowLeft,
-  Download,
-  Share2,
   Sparkles,
   ListChecks,
   Network,
@@ -12,6 +10,7 @@ import {
   Clock,
   HardDrive,
 } from "lucide-react"
+import { DocumentActions } from "@/components/dashboard/document-actions"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -94,16 +93,7 @@ export default async function DocumentPage({
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline">
-              <Share2 data-icon="inline-start" />
-              Share
-            </Button>
-            <Button variant="outline">
-              <Download data-icon="inline-start" />
-              Download
-            </Button>
-          </div>
+          <DocumentActions item={item} />
         </div>
       </div>
 
@@ -158,7 +148,7 @@ export default async function DocumentPage({
                   <CardTitle className="text-base">Quick actions</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-2">
-                  <Button variant="outline" className="justify-start" render={<Link href="/dashboard/quizzes"><ListChecks data-icon="inline-start" />Generate quiz</Link>} />
+                  <Button variant="outline" className="justify-start" render={<Link href="/dashboard/quiz"><ListChecks data-icon="inline-start" />Generate quiz</Link>} />
                   <Button variant="outline" className="justify-start" render={<Link href="/dashboard/graph"><Network data-icon="inline-start" />View in graph</Link>} />
                   <Button variant="outline" className="justify-start">
                     <Sparkles data-icon="inline-start" />
@@ -237,7 +227,7 @@ export default async function DocumentPage({
                   you&apos;ve learned.
                 </p>
               </div>
-              <Button render={<Link href="/dashboard/quizzes">Generate quiz</Link>} />
+              <Button render={<Link href="/dashboard/quiz">Generate quiz</Link>} />
             </CardContent>
           </Card>
         </TabsContent>
