@@ -12,7 +12,11 @@
  * configured, real model calls are made through `generateText` /
  * `Output.object()` (AI SDK 6).
  */
-import { generateText, Output, type LanguageModel } from 'ai'
+// NOTE: `ai` and the model SDKs are loaded lazily (dynamic import) so they
+// never enter the browser bundle — this module is reachable from `"use client"`
+// components through the AI-backed data services. The generation methods only
+// run server-side (API routes), where the dynamic import resolves normally.
+import type { LanguageModel } from 'ai'
 import { z } from 'zod'
 import { conceptRepository } from '@/db/repositories/concept-repository'
 import { quizRepository } from '@/db/repositories/quiz-repository'
@@ -60,15 +64,28 @@ const conceptsSchema = z.object({
 export abstract class BaseAIProvider implements AIProvider {
   abstract readonly name: 'gemini' | 'openai' | 'claude'
 
+  private _model: LanguageModel | null = null
+
   /**
-   * @param model A configured AI SDK LanguageModel, or null when the provider
-   *   is not configured (no API key) — in which case demo data is returned.
+   * @param configured Browser-safe readiness flag (env check only, no SDK).
+   * @param modelFactory Lazily builds the AI SDK model. The model SDK is loaded
+   *   via dynamic import inside this factory, so it stays out of client bundles
+   *   and is only constructed server-side when a generation method runs.
    */
-  protected constructor(protected readonly model: LanguageModel | null) {}
+  protected constructor(
+    protected readonly configured: boolean,
+    private readonly modelFactory: () => Promise<LanguageModel>,
+  ) {}
 
   /** True when a real model is available for live generation. */
   protected get isLive(): boolean {
-    return this.model !== null
+    return this.configured
+  }
+
+  /** Lazily constructs and caches the model (server-side only). */
+  protected async getModel(): Promise<LanguageModel> {
+    if (!this._model) this._model = await this.modelFactory()
+    return this._model
   }
 
   async generateSummary(req: SummaryRequest): Promise<Summary> {
@@ -81,10 +98,12 @@ export abstract class BaseAIProvider implements AIProvider {
     }
     if (!this.isLive) return base
 
+    const { generateText } = await import('ai')
+    const model = await this.getModel()
     const source =
       req.content ?? documentRepository.findById(req.documentId)?.title ?? ''
     const { text } = await generateText({
-      model: this.model as LanguageModel,
+      model,
       system:
         'You are a study assistant. Write a clear, well-structured summary ' +
         'of the provided study material. Keep it faithful and concise.',
@@ -96,8 +115,10 @@ export abstract class BaseAIProvider implements AIProvider {
   async generateQuiz(req: QuizRequest): Promise<QuizQuestion[]> {
     if (!this.isLive) return quizRepository.findQuestions()
 
+    const { generateText, Output } = await import('ai')
+    const model = await this.getModel()
     const { experimental_output } = await generateText({
-      model: this.model as LanguageModel,
+      model,
       system:
         'You generate multiple-choice quiz questions for studying. Each ' +
         'question has 4 options and exactly one correct answer (0-indexed).',
@@ -116,9 +137,11 @@ export abstract class BaseAIProvider implements AIProvider {
   async extractConcepts(documentId: string): Promise<Concept[]> {
     if (!this.isLive) return conceptRepository.findAllConcepts()
 
+    const { generateText, Output } = await import('ai')
+    const model = await this.getModel()
     const doc = documentRepository.findById(documentId)
     const { experimental_output } = await generateText({
-      model: this.model as LanguageModel,
+      model,
       system:
         'You extract key concepts from study material. Return concept labels ' +
         'with an estimated mastery score from 0 to 100.',

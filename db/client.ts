@@ -13,15 +13,13 @@
  * repositories fall back to the in-memory seed via `getMockTables()`, so the
  * entire application keeps working with mock/demo data and no AWS account.
  */
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import {
-  DynamoDBDocumentClient,
-  GetCommand,
-  PutCommand,
-  ScanCommand,
-  QueryCommand,
-  DeleteCommand,
-} from '@aws-sdk/lib-dynamodb'
+// NOTE: The AWS SDK is intentionally NOT imported statically here. This module
+// sits in the static import graph of `"use client"` dashboard components (via
+// the service -> repository chain), so any top-level `@aws-sdk/*` import would
+// be bundled into the browser, bloating the client and breaking the runtime.
+// Server-only AWS code is loaded lazily with dynamic `import()` inside the
+// async helpers below, which only ever run on the server (API routes / scripts).
+import type { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb'
 import { env, features } from '@/config/env'
 import {
   partitionKeyOf,
@@ -39,10 +37,11 @@ export function isDatabaseConnected(): boolean {
 let _docClient: DynamoDBDocumentClient | null = null
 
 /**
- * Lazily creates and caches the DynamoDB DocumentClient. Only invoked on code
- * paths that require a live database, so demo mode never touches AWS.
+ * Lazily creates and caches the DynamoDB DocumentClient. The AWS SDK is loaded
+ * via dynamic `import()` so it never enters the browser bundle. Only invoked on
+ * code paths that require a live database, so demo mode never touches AWS.
  */
-export function getDocClient(): DynamoDBDocumentClient {
+export async function getDocClient(): Promise<DynamoDBDocumentClient> {
   if (!isDatabaseConnected()) {
     throw new Error(
       'DynamoDB is not connected. Set AWS_REGION, AWS_ACCESS_KEY_ID and ' +
@@ -50,6 +49,9 @@ export function getDocClient(): DynamoDBDocumentClient {
     )
   }
   if (_docClient) return _docClient
+
+  const { DynamoDBClient } = await import('@aws-sdk/client-dynamodb')
+  const { DynamoDBDocumentClient } = await import('@aws-sdk/lib-dynamodb')
 
   const client = new DynamoDBClient({
     region: env.AWS_REGION,
@@ -71,7 +73,8 @@ export function getDocClient(): DynamoDBDocumentClient {
 
 /** Scans an entire table and returns all items. */
 export async function scanAll<T>(table: TableName): Promise<T[]> {
-  const client = getDocClient()
+  const client = await getDocClient()
+  const { ScanCommand } = await import('@aws-sdk/lib-dynamodb')
   const items: T[] = []
   let ExclusiveStartKey: Record<string, unknown> | undefined
   do {
@@ -91,7 +94,8 @@ export async function getItem<T>(
   table: TableName,
   key: Record<string, unknown>,
 ): Promise<T | undefined> {
-  const client = getDocClient()
+  const client = await getDocClient()
+  const { GetCommand } = await import('@aws-sdk/lib-dynamodb')
   const res = await client.send(
     new GetCommand({ TableName: tableName(table), Key: key }),
   )
@@ -103,7 +107,8 @@ export async function queryByPartition<T>(
   table: TableName,
   partitionValue: unknown,
 ): Promise<T[]> {
-  const client = getDocClient()
+  const client = await getDocClient()
+  const { QueryCommand } = await import('@aws-sdk/lib-dynamodb')
   const pk = partitionKeyOf(table)
   const res = await client.send(
     new QueryCommand({
@@ -121,7 +126,8 @@ export async function putItem<T extends Record<string, unknown>>(
   table: TableName,
   item: T,
 ): Promise<T> {
-  const client = getDocClient()
+  const client = await getDocClient()
+  const { PutCommand } = await import('@aws-sdk/lib-dynamodb')
   await client.send(
     new PutCommand({ TableName: tableName(table), Item: item }),
   )
@@ -133,7 +139,8 @@ export async function deleteItem(
   table: TableName,
   key: Record<string, unknown>,
 ): Promise<void> {
-  const client = getDocClient()
+  const client = await getDocClient()
+  const { DeleteCommand } = await import('@aws-sdk/lib-dynamodb')
   await client.send(
     new DeleteCommand({ TableName: tableName(table), Key: key }),
   )

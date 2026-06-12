@@ -14,13 +14,12 @@
  * placeholder metadata so the upload flow keeps working on demo data. When
  * configured, real PutObject/DeleteObject/presigned-GET calls are issued.
  */
-import {
-  S3Client,
-  PutObjectCommand,
-  DeleteObjectCommand,
-  GetObjectCommand,
-} from '@aws-sdk/client-s3'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+// NOTE: AWS SDK packages are NOT imported statically. This module is reachable
+// from `"use client"` components via documentService, so a top-level
+// `@aws-sdk/*` import would bundle the S3 SDK into the browser. The SDK is
+// loaded lazily with dynamic `import()` inside the methods, which only run
+// server-side (the /api/upload route).
+import type { S3Client } from '@aws-sdk/client-s3'
 import { UPLOAD_LIMITS } from '@/config/app'
 import { env, features } from '@/config/env'
 import type { StoredFile, UploadedDocument } from '@/types'
@@ -57,8 +56,9 @@ function publicUrl(key: string): string {
 }
 
 let _client: S3Client | null = null
-function getClient(): S3Client {
+async function getClient(): Promise<S3Client> {
   if (_client) return _client
+  const { S3Client } = await import('@aws-sdk/client-s3')
   _client = new S3Client({
     region: region(),
     credentials: {
@@ -81,7 +81,9 @@ export const s3Service = {
     const key = buildKey(input.fileName)
 
     if (features.storage() && bytes) {
-      await getClient().send(
+      const { PutObjectCommand } = await import('@aws-sdk/client-s3')
+      const client = await getClient()
+      await client.send(
         new PutObjectCommand({
           Bucket: bucket(),
           Key: key,
@@ -105,7 +107,9 @@ export const s3Service = {
   /** Deletes a stored object by key. */
   async deleteFile(key: string): Promise<void> {
     if (!features.storage()) return
-    await getClient().send(
+    const { DeleteObjectCommand } = await import('@aws-sdk/client-s3')
+    const client = await getClient()
+    await client.send(
       new DeleteObjectCommand({ Bucket: bucket(), Key: key }),
     )
   },
@@ -113,8 +117,11 @@ export const s3Service = {
   /** Returns a presigned URL for a stored object (public URL in demo mode). */
   async getFileUrl(key: string): Promise<string> {
     if (!features.storage()) return publicUrl(key)
+    const { GetObjectCommand } = await import('@aws-sdk/client-s3')
+    const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner')
+    const client = await getClient()
     return getSignedUrl(
-      getClient(),
+      client,
       new GetObjectCommand({ Bucket: bucket(), Key: key }),
       { expiresIn: 3600 },
     )

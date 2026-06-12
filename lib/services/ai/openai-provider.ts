@@ -4,23 +4,22 @@
  * Wraps OpenAI via the Vercel AI SDK (@ai-sdk/openai). Enabled by setting
  * AI_PROVIDER=openai and OPENAI_API_KEY. All generation logic lives in
  * BaseAIProvider; when the key is absent the base falls back to demo data.
+ *
+ * The @ai-sdk/openai SDK is imported lazily (dynamic import in the model
+ * factory) so it never enters client bundles.
  */
-import { createOpenAI } from '@ai-sdk/openai'
-import type { LanguageModel } from 'ai'
 import { AI_MODELS } from '@/config/app'
 import { env, features } from '@/config/env'
 import { BaseAIProvider } from '@/lib/services/ai/base-provider'
-
-function createModel(): LanguageModel | null {
-  if (!features.openai()) return null
-  const openai = createOpenAI({ apiKey: env.OPENAI_API_KEY })
-  return openai(AI_MODELS.openai)
-}
 
 export class OpenAIProvider extends BaseAIProvider {
   readonly name = 'openai' as const
 
   constructor() {
-    super(createModel())
+    super(features.openai(), async () => {
+      const { createOpenAI } = await import('@ai-sdk/openai')
+      const openai = createOpenAI({ apiKey: env.OPENAI_API_KEY })
+      return openai(AI_MODELS.openai)
+    })
   }
 }
