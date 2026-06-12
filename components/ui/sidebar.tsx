@@ -608,10 +608,14 @@ function SidebarMenuSkeleton({
 }: React.ComponentProps<"div"> & {
   showIcon?: boolean
 }) {
-  // Random width between 50 to 90%.
-  const [width] = React.useState(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`
-  })
+  // Random width between 50 to 90%. Applied AFTER mount so server and first
+  // client render produce identical markup — calling Math.random() during
+  // render would differ between server and client and trigger a hydration
+  // mismatch (React error #418).
+  const [width, setWidth] = React.useState("70%")
+  React.useEffect(() => {
+    setWidth(`${Math.floor(Math.random() * 40) + 50}%`)
+  }, [])
 
   return (
     <div
