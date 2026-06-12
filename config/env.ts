@@ -42,6 +42,9 @@ export interface AppEnv {
   AWS_S3_REGION?: string
   AWS_S3_ACCESS_KEY_ID?: string
   AWS_S3_SECRET_ACCESS_KEY?: string
+  // Authentication (Clerk)
+  CLERK_SECRET_KEY?: string
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?: string
 }
 
 /**
@@ -63,6 +66,9 @@ export const env: AppEnv = {
   AWS_S3_REGION: process.env.AWS_S3_REGION,
   AWS_S3_ACCESS_KEY_ID: process.env.AWS_S3_ACCESS_KEY_ID,
   AWS_S3_SECRET_ACCESS_KEY: process.env.AWS_S3_SECRET_ACCESS_KEY,
+  CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
 }
 
 /** Returns true if every variable in the group is present and non-empty. */
@@ -93,6 +99,9 @@ export const features = {
   openai: () => hasAll(['OPENAI_API_KEY']),
   /** Anthropic Claude (optional) is ready to connect. */
   claude: () => hasAll(['ANTHROPIC_API_KEY']),
+  /** Clerk authentication is ready to connect. */
+  auth: () =>
+    hasAll(['CLERK_SECRET_KEY', 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY']),
 }
 
 /**

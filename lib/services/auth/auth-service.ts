@@ -21,7 +21,7 @@ import type { User } from '@/types'
 export const authService = {
   /** Returns the currently authenticated user. */
   getCurrentUser(): User {
-    // TODO(clerk): const { userId } = await auth(); load profile from Aurora.
+    // TODO(clerk): const { userId } = await auth(); load profile from DynamoDB.
     return userRepository.getCurrent()
   },
 

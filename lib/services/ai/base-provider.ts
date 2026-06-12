@@ -104,7 +104,13 @@ export abstract class BaseAIProvider implements AIProvider {
       prompt: `Generate ${req.count ?? 10} quiz questions for subject "${req.subjectId}".`,
       experimental_output: Output.object({ schema: quizQuestionsSchema }),
     })
-    return experimental_output.questions as QuizQuestion[]
+    return experimental_output.questions.map((q, i) => ({
+      id: `q-${i + 1}`,
+      question: q.question,
+      options: q.options,
+      answer: q.correctAnswer,
+      explanation: q.explanation ?? '',
+    }))
   }
 
   async extractConcepts(documentId: string): Promise<Concept[]> {
