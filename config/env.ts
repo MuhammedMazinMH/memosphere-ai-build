@@ -1,37 +1,47 @@
 /**
  * Typed environment configuration + validation helpers.
  *
- * This module centralizes every environment variable the application will use
- * once external services are connected. Nothing here connects to a real
- * service yet — it only declares, validates, and surfaces configuration so
- * that the rest of the codebase can depend on a single typed source of truth.
+ * This module centralizes every environment variable the application uses to
+ * connect to external services: Amazon DynamoDB (persistence), Amazon S3
+ * (document storage), and the AI providers (Gemini / OpenAI / Anthropic).
  *
- * Production note:
- * - DATABASE_URL ............... AWS Aurora PostgreSQL connection string
- * - AWS_* ...................... AWS S3 file storage credentials/bucket
- * - CLERK_* / NEXT_PUBLIC_CLERK_* Clerk authentication keys
- * - GOOGLE_GENERATIVE_AI_API_KEY Gemini (primary AI provider)
- * - OPENAI_API_KEY ............. OpenAI (future option)
- * - ANTHROPIC_API_KEY .......... Anthropic Claude (future option)
+ * The application is designed to run fully on mock/demo data when nothing is
+ * configured. Each capability below is gated by a `features.*` flag so code
+ * paths can degrade gracefully.
+ *
+ * Variables:
+ * - AI_PROVIDER ................. active AI provider: 'gemini' | 'openai' | 'claude'
+ * - GOOGLE_GENERATIVE_AI_API_KEY  Gemini (default AI provider)
+ * - OPENAI_API_KEY .............. OpenAI (optional)
+ * - ANTHROPIC_API_KEY ........... Anthropic Claude (optional)
+ * - AWS_REGION ................. region for DynamoDB
+ * - AWS_ACCESS_KEY_ID .......... IAM key for DynamoDB
+ * - AWS_SECRET_ACCESS_KEY ...... IAM secret for DynamoDB
+ * - AWS_DYNAMODB_TABLE_PREFIX .. prefix for all DynamoDB table names
+ * - AWS_S3_BUCKET_NAME ......... bucket for document storage
+ * - AWS_S3_REGION .............. region for the S3 bucket
+ * - AWS_S3_ACCESS_KEY_ID ....... IAM key for S3 (falls back to AWS_ACCESS_KEY_ID)
+ * - AWS_S3_SECRET_ACCESS_KEY ... IAM secret for S3 (falls back to AWS_SECRET_ACCESS_KEY)
  */
 
 export interface AppEnv {
   // Core
   NEXT_PUBLIC_APP_URL: string
-  // Database (AWS Aurora PostgreSQL)
-  DATABASE_URL?: string
-  // File storage (AWS S3)
-  AWS_REGION?: string
-  AWS_ACCESS_KEY_ID?: string
-  AWS_SECRET_ACCESS_KEY?: string
-  AWS_S3_BUCKET_NAME?: string
-  // Authentication (Clerk)
-  CLERK_SECRET_KEY?: string
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?: string
   // AI providers
+  AI_PROVIDER?: string
   GOOGLE_GENERATIVE_AI_API_KEY?: string
   OPENAI_API_KEY?: string
   ANTHROPIC_API_KEY?: string
+  // Persistence (Amazon DynamoDB)
+  AWS_REGION?: string
+  AWS_ACCESS_KEY_ID?: string
+  AWS_SECRET_ACCESS_KEY?: string
+  AWS_DYNAMODB_TABLE_PREFIX?: string
+  // File storage (Amazon S3)
+  AWS_S3_BUCKET_NAME?: string
+  AWS_S3_REGION?: string
+  AWS_S3_ACCESS_KEY_ID?: string
+  AWS_S3_SECRET_ACCESS_KEY?: string
 }
 
 /**
@@ -41,17 +51,18 @@ export interface AppEnv {
 export const env: AppEnv = {
   NEXT_PUBLIC_APP_URL:
     process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
-  DATABASE_URL: process.env.DATABASE_URL,
-  AWS_REGION: process.env.AWS_REGION,
-  AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
-  AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
-  AWS_S3_BUCKET_NAME: process.env.AWS_S3_BUCKET_NAME,
-  CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+  AI_PROVIDER: process.env.AI_PROVIDER,
   GOOGLE_GENERATIVE_AI_API_KEY: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+  AWS_REGION: process.env.AWS_REGION,
+  AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+  AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+  AWS_DYNAMODB_TABLE_PREFIX: process.env.AWS_DYNAMODB_TABLE_PREFIX,
+  AWS_S3_BUCKET_NAME: process.env.AWS_S3_BUCKET_NAME,
+  AWS_S3_REGION: process.env.AWS_S3_REGION,
+  AWS_S3_ACCESS_KEY_ID: process.env.AWS_S3_ACCESS_KEY_ID,
+  AWS_S3_SECRET_ACCESS_KEY: process.env.AWS_S3_SECRET_ACCESS_KEY,
 }
 
 /** Returns true if every variable in the group is present and non-empty. */
@@ -64,24 +75,23 @@ function hasAll(keys: (keyof AppEnv)[]): boolean {
 
 /** Feature-availability flags derived from configured env vars. */
 export const features = {
-  /** AWS Aurora PostgreSQL is ready to connect. */
-  database: () => hasAll(['DATABASE_URL']),
-  /** AWS S3 file storage is ready to connect. */
+  /** Amazon DynamoDB persistence is ready to connect. */
+  database: () =>
+    hasAll(['AWS_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']),
+  /** Amazon S3 document storage is ready to connect. */
   storage: () =>
     hasAll([
-      'AWS_REGION',
-      'AWS_ACCESS_KEY_ID',
-      'AWS_SECRET_ACCESS_KEY',
       'AWS_S3_BUCKET_NAME',
-    ]),
-  /** Clerk authentication is ready to connect. */
-  auth: () =>
-    hasAll(['CLERK_SECRET_KEY', 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY']),
-  /** Gemini (primary AI provider) is ready to connect. */
+      // region + credentials are resolved with AWS_* fallbacks (see s3-service)
+    ]) &&
+    (hasAll(['AWS_S3_REGION']) || hasAll(['AWS_REGION'])) &&
+    (hasAll(['AWS_S3_ACCESS_KEY_ID', 'AWS_S3_SECRET_ACCESS_KEY']) ||
+      hasAll(['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'])),
+  /** Gemini (default AI provider) is ready to connect. */
   gemini: () => hasAll(['GOOGLE_GENERATIVE_AI_API_KEY']),
-  /** OpenAI (future option) is ready to connect. */
+  /** OpenAI (optional) is ready to connect. */
   openai: () => hasAll(['OPENAI_API_KEY']),
-  /** Anthropic Claude (future option) is ready to connect. */
+  /** Anthropic Claude (optional) is ready to connect. */
   claude: () => hasAll(['ANTHROPIC_API_KEY']),
 }
 

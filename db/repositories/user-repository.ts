@@ -1,22 +1,29 @@
 /**
- * User repository.
+ * User repository — Amazon DynamoDB.
  *
- * Production note:
- * - Identity is owned by Clerk; the row here mirrors profile data persisted in
- *   Aurora PostgreSQL and keyed by the Clerk user id.
+ * Identity is owned by the auth provider; the item here mirrors profile data
+ * persisted in the `users` table, keyed by the auth user id. Synchronous
+ * `getCurrent` serves the seeded demo user; async methods read live data.
  */
-import { getMockTables } from '@/db/client'
+import { getMockTables, isDatabaseConnected, getItem, buildKey } from '@/db/client'
 import type { User } from '@/types'
 
 export const userRepository = {
-  /** Returns the currently-signed-in user (mock: the single seeded user). */
+  /** Returns the currently-signed-in user (demo: the single seeded user). */
   getCurrent(): User {
-    // TODO(clerk+aurora): resolve the Clerk user id, then
-    // SELECT * FROM users WHERE id = $1
     return getMockTables().users[0]
   },
 
   count(): number {
     return getMockTables().adminStats.totalUsers
+  },
+
+  /** Live read of a user by id from DynamoDB (GetItem), with demo fallback. */
+  async findById(id: string): Promise<User | undefined> {
+    if (!isDatabaseConnected()) {
+      const u = getMockTables().users[0]
+      return u
+    }
+    return getItem<User>('users', buildKey('users', id))
   },
 }

@@ -1,31 +1,47 @@
 /**
- * Document repository (knowledge items).
+ * Document repository (knowledge items) — Amazon DynamoDB.
  *
- * Production note:
- * - Document bytes live in AWS S3; this repository stores/returns only
- *   metadata rows. See lib/services/s3-service.ts for the storage seam.
- * - Reads should be user-scoped once Aurora + Clerk are connected.
+ * Document bytes live in Amazon S3 (see lib/services/s3-service.ts); this
+ * repository stores/returns only metadata items. Synchronous methods serve the
+ * demo data; async `*FromDb` methods read from DynamoDB (table: `documents`)
+ * when a live database is configured.
  */
-import { getMockTables } from '@/db/client'
+import { getMockTables, isDatabaseConnected, scanAll, getItem, buildKey } from '@/db/client'
 import type { Document } from '@/types'
 
 export const documentRepository = {
   findAll(): Document[] {
-    // TODO(aurora): SELECT * FROM documents WHERE user_id = $1 ORDER BY uploaded_at DESC
     return getMockTables().documents
   },
 
   findById(id: string): Document | undefined {
-    // TODO(aurora): SELECT * FROM documents WHERE id = $1 AND user_id = $2
     return getMockTables().documents.find((d) => d.id === id)
   },
 
   findBySubject(subjectId: string): Document[] {
-    // TODO(aurora): SELECT * FROM documents WHERE subject_id = $1 AND user_id = $2
     return getMockTables().documents.filter((d) => d.subjectId === subjectId)
   },
 
   count(): number {
     return getMockTables().documents.length
+  },
+
+  /** Live read of all documents from DynamoDB (Scan), with demo fallback. */
+  async findAllFromDb(): Promise<Document[]> {
+    if (!isDatabaseConnected()) return this.findAll()
+    return scanAll<Document>('documents')
+  },
+
+  /** Live read of a single document from DynamoDB (GetItem), with demo fallback. */
+  async findByIdFromDb(id: string): Promise<Document | undefined> {
+    if (!isDatabaseConnected()) return this.findById(id)
+    return getItem<Document>('documents', buildKey('documents', id))
+  },
+
+  /** Live read of documents for a subject (Scan + filter), with demo fallback. */
+  async findBySubjectFromDb(subjectId: string): Promise<Document[]> {
+    if (!isDatabaseConnected()) return this.findBySubject(subjectId)
+    const all = await scanAll<Document>('documents')
+    return all.filter((d) => d.subjectId === subjectId)
   },
 }

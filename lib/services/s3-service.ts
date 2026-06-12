@@ -1,20 +1,28 @@
 /**
- * AWS S3 storage service.
+ * Amazon S3 storage service (AWS SDK v3).
  *
- * Production note:
- * - This service is the single seam for file storage. Only metadata references
- *   (StoredFile / UploadedDocument) flow through the application layer; raw
- *   bytes live in S3.
- * - When connecting S3:
- *     1. Add AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY,
- *        AWS_S3_BUCKET_NAME (see config/env.ts).
- *     2. Install @aws-sdk/client-s3 and @aws-sdk/s3-request-presigner.
- *     3. Replace each placeholder below with real S3 SDK calls.
- * - No S3 connection is made yet. Methods validate inputs and return
- *   deterministic placeholder metadata so upload flows can be wired up safely.
+ * Single seam for document storage. Only metadata references (StoredFile /
+ * UploadedDocument) flow through the application layer; raw bytes live in S3.
+ *
+ * Configuration (see config/env.ts):
+ * - AWS_S3_BUCKET_NAME ........ required bucket
+ * - AWS_S3_REGION ............. region (falls back to AWS_REGION)
+ * - AWS_S3_ACCESS_KEY_ID ...... key (falls back to AWS_ACCESS_KEY_ID)
+ * - AWS_S3_SECRET_ACCESS_KEY .. secret (falls back to AWS_SECRET_ACCESS_KEY)
+ *
+ * Graceful degradation: when S3 is not configured, uploads return deterministic
+ * placeholder metadata so the upload flow keeps working on demo data. When
+ * configured, real PutObject/DeleteObject/presigned-GET calls are issued.
  */
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { UPLOAD_LIMITS } from '@/config/app'
-import { env, requireEnv } from '@/config/env'
+import { env, features } from '@/config/env'
 import type { StoredFile, UploadedDocument } from '@/types'
 
 export interface UploadInput {
@@ -36,22 +44,57 @@ function assertUploadAllowed(input: UploadInput): void {
 }
 
 function buildKey(fileName: string): string {
-  // Production: prefix with the user id once Clerk is connected, e.g.
+  // Production: prefix with the user id once auth is connected, e.g.
   // `${userId}/${Date.now()}-${fileName}`
   return `uploads/${Date.now()}-${fileName}`
 }
 
+const bucket = (): string => env.AWS_S3_BUCKET_NAME ?? 'memosphere-uploads'
+const region = (): string => env.AWS_S3_REGION ?? env.AWS_REGION ?? 'us-east-1'
+
+function publicUrl(key: string): string {
+  return `https://${bucket()}.s3.${region()}.amazonaws.com/${key}`
+}
+
+let _client: S3Client | null = null
+function getClient(): S3Client {
+  if (_client) return _client
+  _client = new S3Client({
+    region: region(),
+    credentials: {
+      accessKeyId: (env.AWS_S3_ACCESS_KEY_ID ??
+        env.AWS_ACCESS_KEY_ID) as string,
+      secretAccessKey: (env.AWS_S3_SECRET_ACCESS_KEY ??
+        env.AWS_SECRET_ACCESS_KEY) as string,
+    },
+  })
+  return _client
+}
+
 export const s3Service = {
   /** Uploads a PDF / PPT / image and returns its stored metadata. */
-  async uploadFile(input: UploadInput, _bytes?: ArrayBuffer): Promise<UploadedDocument> {
+  async uploadFile(
+    input: UploadInput,
+    bytes?: ArrayBuffer,
+  ): Promise<UploadedDocument> {
     assertUploadAllowed(input)
-    // requireEnv(['AWS_REGION','AWS_ACCESS_KEY_ID','AWS_SECRET_ACCESS_KEY','AWS_S3_BUCKET_NAME'])
-    // TODO(s3): new S3Client(...).send(new PutObjectCommand({ Bucket, Key, Body }))
     const key = buildKey(input.fileName)
+
+    if (features.storage() && bytes) {
+      await getClient().send(
+        new PutObjectCommand({
+          Bucket: bucket(),
+          Key: key,
+          Body: new Uint8Array(bytes),
+          ContentType: input.contentType,
+        }),
+      )
+    }
+
     const file: StoredFile = {
       key,
-      bucket: env.AWS_S3_BUCKET_NAME ?? 'memosphere-uploads',
-      url: `https://${env.AWS_S3_BUCKET_NAME ?? 'memosphere-uploads'}.s3.${env.AWS_REGION ?? 'us-east-1'}.amazonaws.com/${key}`,
+      bucket: bucket(),
+      url: publicUrl(key),
       contentType: input.contentType,
       size: input.size,
       uploadedAt: new Date().toISOString(),
@@ -60,30 +103,25 @@ export const s3Service = {
   },
 
   /** Deletes a stored object by key. */
-  async deleteFile(_key: string): Promise<void> {
-    // requireEnv(['AWS_REGION','AWS_ACCESS_KEY_ID','AWS_SECRET_ACCESS_KEY','AWS_S3_BUCKET_NAME'])
-    // TODO(s3): new S3Client(...).send(new DeleteObjectCommand({ Bucket, Key }))
-    return
+  async deleteFile(key: string): Promise<void> {
+    if (!features.storage()) return
+    await getClient().send(
+      new DeleteObjectCommand({ Bucket: bucket(), Key: key }),
+    )
   },
 
-  /** Returns a (presigned, in production) URL for a stored object. */
+  /** Returns a presigned URL for a stored object (public URL in demo mode). */
   async getFileUrl(key: string): Promise<string> {
-    // TODO(s3): getSignedUrl(client, new GetObjectCommand({ Bucket, Key }))
-    return `https://${env.AWS_S3_BUCKET_NAME ?? 'memosphere-uploads'}.s3.${env.AWS_REGION ?? 'us-east-1'}.amazonaws.com/${key}`
+    if (!features.storage()) return publicUrl(key)
+    return getSignedUrl(
+      getClient(),
+      new GetObjectCommand({ Bucket: bucket(), Key: key }),
+      { expiresIn: 3600 },
+    )
   },
 
   /** Returns whether S3 is configured and ready to receive uploads. */
   isReady(): boolean {
-    try {
-      requireEnv([
-        'AWS_REGION',
-        'AWS_ACCESS_KEY_ID',
-        'AWS_SECRET_ACCESS_KEY',
-        'AWS_S3_BUCKET_NAME',
-      ])
-      return true
-    } catch {
-      return false
-    }
+    return features.storage()
   },
 }

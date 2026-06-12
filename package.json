@@ -9,8 +9,16 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.84",
+    "@ai-sdk/google": "^3.0.82",
+    "@ai-sdk/openai": "^3.0.71",
+    "@aws-sdk/client-dynamodb": "^3.1067.0",
+    "@aws-sdk/client-s3": "^3.1067.0",
+    "@aws-sdk/lib-dynamodb": "^3.1067.0",
+    "@aws-sdk/s3-request-presigner": "^3.1067.0",
     "@base-ui/react": "^1.5.0",
     "@vercel/analytics": "1.6.1",
+    "ai": "^6.0.203",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
