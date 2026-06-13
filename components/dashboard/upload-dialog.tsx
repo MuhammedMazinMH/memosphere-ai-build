@@ -12,19 +12,17 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { Field, FieldGroup, FieldLabel, FieldDescription } from "@/components/ui/field"
 import { UploadCloud, FileText, CheckCircle2 } from "lucide-react"
-import { subjectService } from "@/lib/services"
 import { toast } from "sonner"
-
-const subjects = subjectService.getSubjects()
 
 export function UploadDialog({ trigger }: { trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false)
   const [stage, setStage] = useState<"idle" | "uploading" | "processing" | "done">("idle")
   const [progress, setProgress] = useState(0)
   const [fileName, setFileName] = useState("")
+  const [subject, setSubject] = useState("")
   const [dragActive, setDragActive] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -66,6 +64,7 @@ export function UploadDialog({ trigger }: { trigger: React.ReactNode }) {
     setStage("idle")
     setProgress(0)
     setFileName("")
+    setSubject("")
     setDragActive(false)
     if (inputRef.current) inputRef.current.value = ""
   }
@@ -126,21 +125,17 @@ export function UploadDialog({ trigger }: { trigger: React.ReactNode }) {
               </span>
             </button>
             <Field>
-              <FieldLabel>Assign to subject</FieldLabel>
-              <Select defaultValue={subjects[0].id}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a subject" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {subjects.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+              <FieldLabel htmlFor="upload-subject">Subject</FieldLabel>
+              <Input
+                id="upload-subject"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Type any subject, e.g. Quantum Physics"
+                autoComplete="off"
+              />
+              <FieldDescription>
+                Enter any subject you like. Leave blank to let AI detect it from your file.
+              </FieldDescription>
             </Field>
           </FieldGroup>
         )}
@@ -173,7 +168,9 @@ export function UploadDialog({ trigger }: { trigger: React.ReactNode }) {
             <div className="flex flex-col gap-1">
               <p className="text-sm font-medium">Knowledge added</p>
               <p className="text-xs text-muted-foreground">
-                14 concepts extracted and linked to Machine Learning.
+                {subject.trim()
+                  ? `Concepts extracted and linked to ${subject.trim()}.`
+                  : "Concepts extracted and your subject was detected automatically."}
               </p>
             </div>
             <Button
