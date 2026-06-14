@@ -84,14 +84,30 @@ export const authService = {
    */
   async getCurrentUser(): Promise<User> {
     const clerk = await resolveClerkUser()
+    // App-specific stats (plan/streak/goal) come from the seed — Clerk does not
+    // store these. IDENTITY (name/email/initials/id) must always come from
+    // Clerk and must never fall back to the seeded "Aarav Sharma" profile.
     const seed = userRepository.getCurrent()
-    if (!clerk) return seed
 
-    const name = clerk.fullName || clerk.emailAddress || seed.name
+    if (!clerk) {
+      // Unauthenticated (or Clerk unavailable): return neutral identity so the
+      // seeded mock user is never displayed.
+      return {
+        id: '',
+        name: '',
+        email: '',
+        initials: 'U',
+        plan: seed.plan,
+        streak: seed.streak,
+        goal: seed.goal,
+      }
+    }
+
+    const name = clerk.fullName || clerk.emailAddress
     return {
       id: clerk.id,
       name,
-      email: clerk.emailAddress || seed.email,
+      email: clerk.emailAddress,
       initials: deriveInitials(name),
       plan: seed.plan,
       streak: seed.streak,

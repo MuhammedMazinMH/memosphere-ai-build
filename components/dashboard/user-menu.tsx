@@ -23,13 +23,14 @@ import {
 export function UserMenu() {
   const router = useRouter()
   const { isMobile } = useSidebar()
-  const { user: clerkUser } = useUser()
+  const { user: clerkUser, isLoaded } = useUser()
   const { signOut } = useClerk()
 
+  // Identity comes exclusively from the Clerk session — no seeded mock fallback.
   const name =
     clerkUser?.fullName ||
     clerkUser?.primaryEmailAddress?.emailAddress ||
-    "Account"
+    (isLoaded ? "Account" : "")
   const email = clerkUser?.primaryEmailAddress?.emailAddress ?? ""
   const initials =
     (name
@@ -41,6 +42,7 @@ export function UserMenu() {
       .toUpperCase()) || "U"
 
   const user = { name, email, initials }
+  console.log("[v0] USER_MENU_USER", user)
 
   async function handleLogout() {
     await signOut()

@@ -20,14 +20,20 @@ export const metadata: Metadata = {
   title: "Dashboard",
 }
 
+// Identity is read from the live Clerk session via auth()/currentUser(), so the
+// page must always render dynamically — never prerender/cache a stale user.
+export const dynamic = "force-dynamic"
+
 export default async function DashboardPage() {
   const user = await authService.getCurrentUser()
   console.log("[v0] DASHBOARD_USER", user)
 
+  const firstName = user.name.split(" ")[0]
+
   return (
     <>
       <PageHeader
-        title={`Welcome back, ${user.name.split(" ")[0]}`}
+        title={firstName ? `Welcome back, ${firstName}` : "Welcome back"}
         description={`${user.goal} \u00B7 ${user.streak}-day streak`}
       >
         <Badge variant="secondary" className="gap-1">

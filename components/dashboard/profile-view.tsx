@@ -34,10 +34,11 @@ export function ProfileView() {
     Object.fromEntries(notifications.map((n) => [n.id, n.on])),
   )
 
+  // Identity (name/email/initials) comes ONLY from the authenticated Clerk
+  // session — never from the seeded mock profile. App-specific stats
+  // (streak/goal) are the only fields still sourced from the seed.
   const name =
-    clerkUser?.fullName ||
-    clerkUser?.primaryEmailAddress?.emailAddress ||
-    seedProfile.name
+    clerkUser?.fullName || clerkUser?.primaryEmailAddress?.emailAddress || ""
   const initials =
     (name
       .split(/\s+/)
@@ -47,15 +48,14 @@ export function ProfileView() {
       .slice(0, 2)
       .toUpperCase()) || "U"
 
-  // Identity (name/email/initials) comes from the authenticated Clerk session;
-  // app-specific stats (streak/goal) come from the seeded profile.
   const user = {
     name,
-    email: clerkUser?.primaryEmailAddress?.emailAddress ?? seedProfile.email,
+    email: clerkUser?.primaryEmailAddress?.emailAddress ?? "",
     initials,
     streak: seedProfile.streak,
     goal: seedProfile.goal,
   }
+  console.log("[v0] PROFILE_USER", user)
 
   return (
     <Tabs defaultValue="profile" className="gap-6">
@@ -100,11 +100,11 @@ export function ProfileView() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field>
                   <FieldLabel htmlFor="name">Full name</FieldLabel>
-                  <Input id="name" name="name" autoComplete="name" defaultValue={user.name} />
+                  <Input key={`name-${user.name}`} id="name" name="name" autoComplete="name" defaultValue={user.name} />
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="email">Email</FieldLabel>
-                  <Input id="email" name="email" type="email" autoComplete="email" defaultValue={user.email} />
+                  <Input key={`email-${user.email}`} id="email" name="email" type="email" autoComplete="email" defaultValue={user.email} />
                 </Field>
               </div>
               <Field>
