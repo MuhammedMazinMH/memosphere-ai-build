@@ -33,6 +33,12 @@ export function SignUpForm() {
   const [code, setCode] = useState("")
   const score = strength(password)
 
+  console.log("[v0] HOOK_STATE", {
+    isLoaded,
+    hasSignUp: !!signUp,
+    hasSetActive: !!setActive,
+  })
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     console.log("[v0] SUBMIT_CLICKED")
     e.preventDefault()
