@@ -34,7 +34,14 @@ export const notificationRepository = {
     if (!isDatabaseConnected()) {
       items = [...memory.values()].filter((n) => n.userId === userId)
     } else {
-      items = await queryByPartition<Notification>('notifications', userId)
+      try {
+        items = await queryByPartition<Notification>('notifications', userId)
+      } catch (error) {
+        // Table may not exist yet / AWS misconfigured. Degrade to empty rather
+        // than throwing, so the bell and any SSR caller never crash.
+        console.log('[v0] notificationRepository.listForUser failed', error)
+        items = []
+      }
     }
     return items.sort((a, b) => b.createdAt - a.createdAt)
   },
@@ -116,7 +123,12 @@ export const notificationRepository = {
   /** Total notification count across all users (admin metric). */
   async count(): Promise<number> {
     if (!isDatabaseConnected()) return memory.size
-    const all = await scanAll<Notification>('notifications')
-    return all.length
+    try {
+      const all = await scanAll<Notification>('notifications')
+      return all.length
+    } catch (error) {
+      console.log('[v0] notificationRepository.count failed', error)
+      return 0
+    }
   },
 }

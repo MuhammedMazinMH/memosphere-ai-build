@@ -44,11 +44,18 @@ export const settingsRepository = {
     if (!isDatabaseConnected()) {
       return memory.get(userId) ?? defaults(userId)
     }
-    const existing = await getItem<UserSettings>(
-      'userSettings',
-      buildKey('userSettings', userId),
-    )
-    return existing ?? defaults(userId)
+    try {
+      const existing = await getItem<UserSettings>(
+        'userSettings',
+        buildKey('userSettings', userId),
+      )
+      return existing ?? defaults(userId)
+    } catch (error) {
+      // The table may not exist yet, or AWS may be misconfigured. Never crash a
+      // render over optional settings — fall back to defaults instead.
+      console.log('[v0] settingsRepository.get failed; using defaults', error)
+      return defaults(userId)
+    }
   },
 
   /** Creates or replaces a user's full settings item. */
@@ -96,7 +103,12 @@ export const settingsRepository = {
   /** Total number of stored settings items (admin metric). */
   async count(): Promise<number> {
     if (!isDatabaseConnected()) return memory.size
-    const all = await scanAll<UserSettings>('userSettings')
-    return all.length
+    try {
+      const all = await scanAll<UserSettings>('userSettings')
+      return all.length
+    } catch (error) {
+      console.log('[v0] settingsRepository.count failed', error)
+      return 0
+    }
   },
 }
