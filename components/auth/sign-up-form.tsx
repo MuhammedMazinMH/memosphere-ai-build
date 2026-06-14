@@ -3,9 +3,11 @@
 import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useSignUp } from "@clerk/nextjs"
+import { isClerkAPIResponseError } from "@clerk/nextjs/errors"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Field, FieldGroup, FieldLabel, FieldDescription } from "@/components/ui/field"
+import { Field, FieldGroup, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
@@ -23,14 +25,99 @@ const labels = ["Too weak", "Weak", "Fair", "Good", "Strong"]
 
 export function SignUpForm() {
   const router = useRouter()
+  const { isLoaded, signUp, setActive } = useSignUp()
   const [loading, setLoading] = useState(false)
   const [password, setPassword] = useState("")
+  const [formError, setFormError] = useState<string | null>(null)
+  const [pendingVerification, setPendingVerification] = useState(false)
+  const [code, setCode] = useState("")
   const score = strength(password)
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    if (!isLoaded) return
+    setFormError(null)
     setLoading(true)
-    setTimeout(() => router.push("/dashboard"), 900)
+
+    const form = e.currentTarget
+    const data = new FormData(form)
+    const fullName = String(data.get("name") ?? "").trim()
+    const email = String(data.get("email") ?? "").trim()
+    const pw = String(data.get("password") ?? "")
+    const [firstName, ...rest] = fullName.split(" ")
+    const lastName = rest.join(" ")
+
+    try {
+      await signUp.create({
+        emailAddress: email,
+        password: pw,
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
+      })
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" })
+      setPendingVerification(true)
+    } catch (err) {
+      setFormError(
+        isClerkAPIResponseError(err)
+          ? (err.errors[0]?.longMessage ?? err.errors[0]?.message ?? "Something went wrong. Please try again.")
+          : "Something went wrong. Please try again.",
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function onVerify(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    if (!isLoaded) return
+    setFormError(null)
+    setLoading(true)
+
+    try {
+      const result = await signUp.attemptEmailAddressVerification({ code })
+      if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId })
+        router.push("/dashboard")
+      } else {
+        setFormError("Verification could not be completed. Please try again.")
+      }
+    } catch (err) {
+      setFormError(
+        isClerkAPIResponseError(err)
+          ? (err.errors[0]?.longMessage ?? err.errors[0]?.message ?? "Invalid verification code.")
+          : "Invalid verification code.",
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (pendingVerification) {
+    return (
+      <form onSubmit={onVerify}>
+        <FieldGroup>
+          <Field>
+            <FieldLabel htmlFor="code">Verification code</FieldLabel>
+            <Input
+              id="code"
+              name="code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="Enter the 6-digit code"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              required
+            />
+            <FieldDescription>We sent a verification code to your email.</FieldDescription>
+            {formError ? <FieldError>{formError}</FieldError> : null}
+          </Field>
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? <Spinner data-icon="inline-start" /> : null}
+            Verify email
+          </Button>
+        </FieldGroup>
+      </form>
+    )
   }
 
   return (
@@ -89,6 +176,9 @@ export function SignUpForm() {
             I agree to the Terms of Service and Privacy Policy
           </FieldLabel>
         </Field>
+        {formError ? <FieldError>{formError}</FieldError> : null}
+        {/* Clerk bot-protection widget renders into this element when required */}
+        <div id="clerk-captcha" />
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? <Spinner data-icon="inline-start" /> : null}
           Create account
