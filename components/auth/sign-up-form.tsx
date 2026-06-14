@@ -28,15 +28,21 @@ export function SignUpForm() {
   // No isLoaded, no setActive — fetchStatus is 'idle' | 'fetching'
   const { signUp, fetchStatus } = useSignUp()
 
-  console.log("[v0] RAW_USE_SIGNUP", useSignUp())
-
+  // Each field has its own independent state — no field derives from another.
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [verificationCode, setVerificationCode] = useState("")
   const [formError, setFormError] = useState<string | null>(null)
   const [pendingVerification, setPendingVerification] = useState(false)
-  const [code, setCode] = useState("")
   const score = strength(password)
 
   const loading = fetchStatus === "fetching"
+
+  console.log("[v0] NAME_STATE", name)
+  console.log("[v0] EMAIL_STATE", email)
+  console.log("[v0] PASSWORD_STATE", password)
+  console.log("[v0] VERIFICATION_CODE_STATE", verificationCode)
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     console.log("[v0] SUBMIT_CLICKED")
@@ -45,19 +51,15 @@ export function SignUpForm() {
     if (!signUp) return
     setFormError(null)
 
-    const form = e.currentTarget
-    const data = new FormData(form)
-    const fullName = String(data.get("name") ?? "").trim()
-    const email = String(data.get("email") ?? "").trim()
-    const pw = String(data.get("password") ?? "")
+    const fullName = name.trim()
     const [firstName, ...rest] = fullName.split(" ")
     const lastName = rest.join(" ")
 
     console.log("[v0] SIGNUP_PASSWORD_START")
     // v6 method: signUp.password() — creates account + sends verification
     const { error: createError } = await signUp.password({
-      emailAddress: email,
-      password: pw,
+      emailAddress: email.trim(),
+      password,
       firstName: firstName || undefined,
       lastName: lastName || undefined,
     })
@@ -81,6 +83,8 @@ export function SignUpForm() {
     }
 
     console.log("[v0] SEND_EMAIL_CODE_SUCCESS")
+    // Guarantee the verification code field starts empty and independent.
+    setVerificationCode("")
     setPendingVerification(true)
   }
 
@@ -91,7 +95,7 @@ export function SignUpForm() {
 
     console.log("[v0] VERIFY_EMAIL_CODE_START")
     // v6: verifications.verifyEmailCode() — attempts the code
-    const { error: codeError } = await signUp.verifications.verifyEmailCode({ code })
+    const { error: codeError } = await signUp.verifications.verifyEmailCode({ code: verificationCode })
 
     if (codeError) {
       console.error("[v0] VERIFY_EMAIL_CODE_ERROR", codeError)
@@ -117,18 +121,19 @@ export function SignUpForm() {
 
   if (pendingVerification) {
     return (
-      <form onSubmit={onVerify}>
+      <form key="verify-step" onSubmit={onVerify}>
         <FieldGroup>
           <Field>
-            <FieldLabel htmlFor="code">Verification code</FieldLabel>
+            <FieldLabel htmlFor="verificationCode">Verification code</FieldLabel>
             <Input
-              id="code"
-              name="code"
+              key="verification-code-input"
+              id="verificationCode"
+              name="verificationCode"
               inputMode="numeric"
               autoComplete="one-time-code"
               placeholder="Enter the 6-digit code"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value)}
               required
             />
             <FieldDescription>We sent a verification code to your email.</FieldDescription>
@@ -144,15 +149,33 @@ export function SignUpForm() {
   }
 
   return (
-    <form onSubmit={onSubmit}>
+    <form key="signup-step" onSubmit={onSubmit}>
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="name">Full name</FieldLabel>
-          <Input id="name" name="name" autoComplete="name" placeholder="Your full name" required />
+          <Input
+            key="full-name-input"
+            id="name"
+            name="name"
+            autoComplete="name"
+            placeholder="Your full name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
         </Field>
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input id="email" name="email" type="email" autoComplete="email" placeholder="you@university.edu" required />
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            placeholder="you@university.edu"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
         </Field>
         <Field>
           <FieldLabel htmlFor="password">Password</FieldLabel>
