@@ -9,6 +9,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { notificationRepository } from '@/db/repositories/notification-repository'
+import { verifyRequiredTables } from '@/db/client'
 import type { NotificationType } from '@/lib/types/account'
 
 /** Server-owned copy for each app event, so clients can't spoof content. */
@@ -65,6 +66,8 @@ export async function GET() {
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  // Startup check: logs a clear, actionable error if a table is missing.
+  await verifyRequiredTables()
   const notifications = await notificationRepository.listForUser(userId)
   const unread = notifications.filter((n) => !n.isRead).length
   return NextResponse.json({ notifications, unread })

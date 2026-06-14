@@ -68,6 +68,64 @@ export async function getDocClient(): Promise<DynamoDBDocumentClient> {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Startup verification                                                       */
+/* -------------------------------------------------------------------------- */
+
+/** Tables required by the settings/notifications features. */
+const REQUIRED_TABLES: TableName[] = ['userSettings', 'notifications']
+
+/** Cached per-process verification promise so the check runs once per cold start. */
+let _tablesVerified: Promise<void> | null = null
+
+/**
+ * Verifies that the settings/notifications tables physically exist, logging a
+ * single clear, actionable error if any are missing. Runs at most once per
+ * process (cached). No-op in demo mode (no AWS configured). Never throws — it
+ * is purely diagnostic so callers can run it without affecting behavior.
+ */
+export function verifyRequiredTables(): Promise<void> {
+  if (!isDatabaseConnected()) return Promise.resolve()
+  if (_tablesVerified) return _tablesVerified
+
+  _tablesVerified = (async () => {
+    const client = await getDocClient()
+    const { DescribeTableCommand } = await import('@aws-sdk/client-dynamodb')
+    const missing: string[] = []
+
+    for (const t of REQUIRED_TABLES) {
+      const physical = tableName(t)
+      try {
+        await client.send(new DescribeTableCommand({ TableName: physical }))
+      } catch (err) {
+        if ((err as { name?: string })?.name === 'ResourceNotFoundException') {
+          missing.push(physical)
+        } else {
+          console.error(
+            `[db] Could not verify table "${physical}":`,
+            (err as Error)?.message ?? err,
+          )
+        }
+      }
+    }
+
+    if (missing.length > 0) {
+      console.error(
+        `[db] MISSING DynamoDB table(s): ${missing.join(', ')}. ` +
+          `Settings/notifications persistence will fail until these exist. ` +
+          `Create them by running: node scripts/create-tables.mjs ` +
+          `(uses AWS_DYNAMODB_TABLE_PREFIX="${env.AWS_DYNAMODB_TABLE_PREFIX ?? 'memosphere_'}").`,
+      )
+    }
+  })().catch((err) => {
+    // Reset the cache on unexpected failure so a later request can retry.
+    _tablesVerified = null
+    console.error('[db] verifyRequiredTables failed unexpectedly:', err)
+  })
+
+  return _tablesVerified
+}
+
+/* -------------------------------------------------------------------------- */
 /* Generic DynamoDB access helpers (parameterized; injection-safe)            */
 /* -------------------------------------------------------------------------- */
 

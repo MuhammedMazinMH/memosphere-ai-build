@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { settingsRepository } from '@/db/repositories/settings-repository'
 import { notificationRepository } from '@/db/repositories/notification-repository'
+import { verifyRequiredTables } from '@/db/client'
 import type { NotificationPreferences } from '@/lib/types/account'
 
 export async function GET() {
@@ -16,6 +17,8 @@ export async function GET() {
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  // Startup check: logs a clear, actionable error if a table is missing.
+  await verifyRequiredTables()
   const settings = await settingsRepository.get(userId)
   return NextResponse.json({ settings })
 }
@@ -31,6 +34,9 @@ export async function PUT(request: Request) {
     bio?: string
     notifications?: Partial<NotificationPreferences>
   }
+
+  // Startup check: logs a clear, actionable error if a table is missing.
+  await verifyRequiredTables()
 
   try {
     const current = await settingsRepository.get(userId)
@@ -79,8 +85,8 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ settings: updated })
   } catch (error) {
-    // TEMPORARY DIAGNOSTIC: surface the exact backend error to the client so the
-    // user can read the precise DynamoDB exception (name, message, AWS status).
+    // Surface the precise DynamoDB exception (name/message/AWS status) in logs,
+    // and return a clear message + status so the client can show what failed.
     const err = error as {
       name?: string
       message?: string
@@ -88,7 +94,6 @@ export async function PUT(request: Request) {
       __type?: string
     }
     const awsStatus = err?.$metadata?.httpStatusCode
-    // AWS SDK v3 exposes the exception type on `name` (e.g. ResourceNotFoundException).
     const errorName = err?.name ?? err?.__type ?? 'Error'
     const errorMessage = err?.message ?? 'Unknown error'
 
@@ -105,7 +110,6 @@ export async function PUT(request: Request) {
         message: errorMessage,
         awsStatus: awsStatus ?? null,
       },
-      // Echo the AWS HTTP status when present, otherwise 500.
       { status: awsStatus ?? 500 },
     )
   }
