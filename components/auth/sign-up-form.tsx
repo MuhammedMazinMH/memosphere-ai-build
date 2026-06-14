@@ -148,7 +148,7 @@ export function SignUpForm() {
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="name">Full name</FieldLabel>
-          <Input id="name" name="name" autoComplete="name" placeholder="Alex Morgan" required />
+          <Input id="name" name="name" autoComplete="name" placeholder="Your full name" required />
         </Field>
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>

@@ -30,22 +30,50 @@ export function SignInForm() {
     const password = String(data.get("password") ?? "")
 
     // v6 method: signIn.password() — submits the identifier + password
-    const { error: passwordError } = await signIn.password({
+    const passwordResult = await signIn.password({
       identifier: email,
       password,
     })
 
-    if (passwordError) {
+    console.log("[v0] SIGNIN_PASSWORD_RESULT", passwordResult)
+    console.log("[v0] SIGNIN_STATUS", signIn.status)
+    console.log("[v0] SIGNIN_CREATED_SESSION_ID", signIn.createdSessionId)
+    console.log("[v0] SIGNIN_EXISTING_SESSION", signIn.existingSession)
+    console.log("[v0] SIGNIN_ERROR", passwordResult.error)
+
+    if (passwordResult.error) {
       setFormError(
-        passwordError.longMessage ?? passwordError.message ?? "Invalid email or password.",
+        passwordResult.error.longMessage ??
+          passwordResult.error.message ??
+          "Invalid email or password.",
       )
       return
     }
 
-    // v6: finalize() activates the new session
+    // The user already has an active session (e.g. just signed up). No new
+    // session is created, so finalize() would fail — just go to the dashboard.
+    if (signIn.existingSession?.sessionId) {
+      console.log("[v0] SIGNIN_USING_EXISTING_SESSION", signIn.existingSession.sessionId)
+      router.push("/dashboard")
+      return
+    }
+
+    // finalize() requires status === "complete" (a created session). Only then
+    // can we activate it. Anything else means more verification is required.
+    if (signIn.status !== "complete" || !signIn.createdSessionId) {
+      console.log("[v0] SIGNIN_NOT_COMPLETE", signIn.status)
+      setFormError(
+        `Additional verification is required to sign in (status: ${signIn.status ?? "unknown"}).`,
+      )
+      return
+    }
+
+    // v6: finalize() activates the newly created session.
     const { error: finalizeError } = await signIn.finalize({
       navigate: () => router.push("/dashboard"),
     })
+
+    console.log("[v0] SIGNIN_FINALIZE_ERROR", finalizeError)
 
     if (finalizeError) {
       setFormError(
