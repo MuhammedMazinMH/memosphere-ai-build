@@ -65,7 +65,17 @@ export const settingsRepository = {
       memory.set(next.userId, next)
       return next
     }
-    await putItem('userSettings', next as unknown as Record<string, unknown>)
+    try {
+      await putItem('userSettings', next as unknown as Record<string, unknown>)
+    } catch (error) {
+      // DynamoDB write failed — keep the in-process copy so reads within this
+      // request lifecycle still see the latest value, but surface the error
+      // so it appears in Vercel function logs.
+      console.error('[settings] putItem failed for userId', next.userId, error)
+      // Re-throw so the API route can return a proper 500 to the client
+      // instead of silently returning stale data.
+      throw error
+    }
     return next
   },
 
@@ -97,7 +107,12 @@ export const settingsRepository = {
       memory.delete(userId)
       return
     }
-    await deleteItem('userSettings', buildKey('userSettings', userId))
+    try {
+      await deleteItem('userSettings', buildKey('userSettings', userId))
+    } catch (error) {
+      // Table may not exist in this environment — log but don't block deletion.
+      console.error('[settings] deleteItem failed for userId', userId, error)
+    }
   },
 
   /** Total number of stored settings items (admin metric). */

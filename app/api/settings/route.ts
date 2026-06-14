@@ -32,48 +32,59 @@ export async function PUT(request: Request) {
     notifications?: Partial<NotificationPreferences>
   }
 
-  const current = await settingsRepository.get(userId)
-  const goalChanged =
-    typeof body.studyGoal === 'string' && body.studyGoal !== current.studyGoal
+  try {
+    const current = await settingsRepository.get(userId)
+    const goalChanged =
+      typeof body.studyGoal === 'string' && body.studyGoal !== current.studyGoal
 
-  let updated = current
+    let updated = current
 
-  if (
-    typeof body.studyGoal === 'string' ||
-    typeof body.bio === 'string'
-  ) {
-    updated = await settingsRepository.updateProfile(userId, {
-      studyGoal:
-        typeof body.studyGoal === 'string'
-          ? body.studyGoal.trim().slice(0, 200)
-          : undefined,
-      bio:
-        typeof body.bio === 'string'
-          ? body.bio.trim().slice(0, 500)
-          : undefined,
-    })
+    if (typeof body.studyGoal === 'string' || typeof body.bio === 'string') {
+      updated = await settingsRepository.updateProfile(userId, {
+        studyGoal:
+          typeof body.studyGoal === 'string'
+            ? body.studyGoal.trim().slice(0, 200)
+            : undefined,
+        bio:
+          typeof body.bio === 'string'
+            ? body.bio.trim().slice(0, 500)
+            : undefined,
+      })
+    }
+
+    if (body.notifications) {
+      updated = await settingsRepository.updateNotifications(userId, {
+        weekly: Boolean(body.notifications.weekly ?? updated.notifications.weekly),
+        gaps: Boolean(body.notifications.gaps ?? updated.notifications.gaps),
+        quiz: Boolean(body.notifications.quiz ?? updated.notifications.quiz),
+        product: Boolean(
+          body.notifications.product ?? updated.notifications.product,
+        ),
+      })
+    }
+
+    // Emit a notification when the study goal changes.
+    if (goalChanged && body.studyGoal) {
+      try {
+        await notificationRepository.create({
+          userId,
+          title: 'Study goal updated',
+          message: `Your study goal is now "${updated.studyGoal}".`,
+          type: 'study_goal_updated',
+        })
+      } catch {
+        // Non-critical — never fail the settings save because of a notification.
+      }
+    }
+
+    return NextResponse.json({ settings: updated })
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Unknown error'
+    console.error('[api/settings] PUT failed for userId', userId, error)
+    return NextResponse.json(
+      { error: 'Could not save settings', detail: message },
+      { status: 500 },
+    )
   }
-
-  if (body.notifications) {
-    updated = await settingsRepository.updateNotifications(userId, {
-      weekly: Boolean(body.notifications.weekly ?? updated.notifications.weekly),
-      gaps: Boolean(body.notifications.gaps ?? updated.notifications.gaps),
-      quiz: Boolean(body.notifications.quiz ?? updated.notifications.quiz),
-      product: Boolean(
-        body.notifications.product ?? updated.notifications.product,
-      ),
-    })
-  }
-
-  // Emit a notification when the study goal changes (foundation type).
-  if (goalChanged && body.studyGoal) {
-    await notificationRepository.create({
-      userId,
-      title: 'Study goal updated',
-      message: `Your study goal is now "${updated.studyGoal}".`,
-      type: 'study_goal_updated',
-    })
-  }
-
-  return NextResponse.json({ settings: updated })
 }

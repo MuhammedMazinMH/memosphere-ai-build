@@ -139,8 +139,16 @@ function MfaCard() {
     try {
       const resource = await user.createTOTP()
       setTotp(resource)
-    } catch {
-      toast.error("Could not start MFA setup")
+    } catch (err) {
+      // Surface the real Clerk error so it's visible in the console and toast.
+      const clerkMsg =
+        (err as { errors?: { longMessage?: string; message?: string }[] })
+          ?.errors?.[0]?.longMessage ??
+        (err as { errors?: { message?: string }[] })?.errors?.[0]?.message ??
+        (err as Error)?.message ??
+        "Could not start MFA setup"
+      console.error("[mfa] createTOTP failed:", err)
+      toast.error(clerkMsg)
     } finally {
       setBusy(false)
     }
@@ -155,8 +163,15 @@ function MfaCard() {
       setTotp(null)
       setCode("")
       toast.success("Two-factor authentication enabled")
-    } catch {
-      toast.error("Invalid code, try again")
+    } catch (err) {
+      const clerkMsg =
+        (err as { errors?: { longMessage?: string; message?: string }[] })
+          ?.errors?.[0]?.longMessage ??
+        (err as { errors?: { message?: string }[] })?.errors?.[0]?.message ??
+        (err as Error)?.message ??
+        "Invalid code, try again"
+      console.error("[mfa] verifyTOTP failed:", err)
+      toast.error(clerkMsg)
     } finally {
       setBusy(false)
     }
@@ -169,8 +184,15 @@ function MfaCard() {
       await user.disableTOTP()
       await user.reload()
       toast.success("Two-factor authentication disabled")
-    } catch {
-      toast.error("Could not disable MFA")
+    } catch (err) {
+      const clerkMsg =
+        (err as { errors?: { longMessage?: string; message?: string }[] })
+          ?.errors?.[0]?.longMessage ??
+        (err as { errors?: { message?: string }[] })?.errors?.[0]?.message ??
+        (err as Error)?.message ??
+        "Could not disable MFA"
+      console.error("[mfa] disableTOTP failed:", err)
+      toast.error(clerkMsg)
     } finally {
       setBusy(false)
     }

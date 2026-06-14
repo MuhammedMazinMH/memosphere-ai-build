@@ -33,10 +33,18 @@ export function DeleteAccountDialog() {
     try {
       // 1) Server cleanup of DynamoDB-owned data + Clerk user deletion.
       const res = await fetch("/api/account", { method: "DELETE" })
-      if (!res.ok) throw new Error()
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({})) as { detail?: string; error?: string }
+        const msg = json.detail ?? json.error ?? "Could not delete your account. Please try again."
+        console.error("[delete-account] server error:", json)
+        toast.error(msg)
+        setBusy(false)
+        return
+      }
       // 2) Clear the local session and redirect to the landing page.
       await signOut({ redirectUrl: "/" })
-    } catch {
+    } catch (err) {
+      console.error("[delete-account] unexpected error:", err)
       setBusy(false)
       toast.error("Could not delete your account. Please try again.")
     }

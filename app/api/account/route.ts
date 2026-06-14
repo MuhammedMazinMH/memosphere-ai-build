@@ -41,16 +41,29 @@ export async function DELETE() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // 1) Remove DynamoDB-owned data.
-  await settingsRepository.remove(userId)
-  await notificationRepository.removeAllForUser(userId)
-  // User-owned content keyed by id with an owner attribute.
-  await purgeOwned('subjects', 'userId', 'id', userId)
-  await purgeOwned('documents', 'userId', 'id', userId)
+  try {
+    // 1) Remove DynamoDB-owned data (each step is independently fault-tolerant).
+    await settingsRepository.remove(userId)
+    await notificationRepository.removeAllForUser(userId)
+    await purgeOwned('subjects', 'userId', 'id', userId)
+    await purgeOwned('documents', 'userId', 'id', userId)
+  } catch (error) {
+    console.error('[api/account] DynamoDB cleanup failed for userId', userId, error)
+    // Do not block deletion over a cleanup failure — continue to Clerk deletion.
+  }
 
-  // 2) Delete the Clerk user (permanent).
-  const client = await clerkClient()
-  await client.users.deleteUser(userId)
+  try {
+    // 2) Delete the Clerk user (permanent, requires CLERK_SECRET_KEY).
+    const client = await clerkClient()
+    await client.users.deleteUser(userId)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('[api/account] Clerk deleteUser failed for userId', userId, error)
+    return NextResponse.json(
+      { error: 'Could not delete account', detail: message },
+      { status: 500 },
+    )
+  }
 
   return NextResponse.json({ success: true })
 }
