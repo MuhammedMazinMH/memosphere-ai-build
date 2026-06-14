@@ -1,46 +1,109 @@
 /**
- * Authentication service (Clerk-ready seam).
+ * Authentication service — Clerk-backed.
  *
- * Production note:
- * - Authentication is provided by Clerk. This service is the single place the
- *   rest of the app asks "who is the current user?".
- * - When connecting Clerk:
- *     1. Add CLERK_SECRET_KEY and NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
- *        (see config/env.ts).
- *     2. Install @clerk/nextjs, wrap the app in <ClerkProvider>, and add the
- *        Clerk middleware.
- *     3. Replace `getCurrentUser()` below with `auth()` / `currentUser()` from
- *        @clerk/nextjs/server and map the Clerk user to the User type.
- * - Today it returns the seeded mock user via the repository so the UI renders
- *   identically without a real auth session.
+ * This is the single place the rest of the app asks "who is the current user?".
+ * Identity (id, name, email, avatar) is resolved from the active Clerk session
+ * on the server via `auth()` / `currentUser()`. App-specific profile stats that
+ * Clerk does not store (plan, streak, goal) are still sourced from the seeded
+ * profile so the dashboard renders identically — DynamoDB is left untouched.
+ *
+ * NOTE: This module imports `@clerk/nextjs/server` and is therefore
+ * server-only. Client components must read the user via Clerk's `useUser()`
+ * hook instead of importing this service.
  */
+import { auth, currentUser } from '@clerk/nextjs/server'
 import { features } from '@/config/env'
 import { userRepository } from '@/db/repositories/user-repository'
 import type { User } from '@/types'
 
+/** The shape of a user resolved from the active Clerk session. */
+export interface ClerkSessionUser {
+  id: string
+  firstName: string
+  lastName: string
+  fullName: string
+  emailAddress: string
+  imageUrl: string
+}
+
+/** Derives uppercase initials (max 2) from a display name or email. */
+function deriveInitials(name: string): string {
+  const initials = name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .filter(Boolean)
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+  return initials || 'U'
+}
+
+/** Resolves the current user from the active Clerk session (server-only). */
+async function resolveClerkUser(): Promise<ClerkSessionUser | null> {
+  const { userId } = await auth()
+  if (!userId) {
+    console.log('[v0] CLERK_USER', null)
+    return null
+  }
+
+  const u = await currentUser()
+  const firstName = u?.firstName ?? ''
+  const lastName = u?.lastName ?? ''
+  const emailAddress =
+    u?.primaryEmailAddress?.emailAddress ??
+    u?.emailAddresses?.[0]?.emailAddress ??
+    ''
+
+  const clerkUser: ClerkSessionUser = {
+    id: userId,
+    firstName,
+    lastName,
+    fullName: [firstName, lastName].filter(Boolean).join(' ') || (u?.username ?? ''),
+    emailAddress,
+    imageUrl: u?.imageUrl ?? '',
+  }
+
+  console.log('[v0] CLERK_USER', clerkUser)
+  return clerkUser
+}
+
 export const authService = {
-  /** Returns the currently authenticated user. */
-  getCurrentUser(): User {
-    // TODO(clerk): const { userId } = await auth(); load profile from DynamoDB.
-    return userRepository.getCurrent()
+  /**
+   * Clerk-backed current user, exactly as stored in the active session.
+   * Returns null when there is no authenticated user.
+   */
+  async getClerkUser(): Promise<ClerkSessionUser | null> {
+    return resolveClerkUser()
   },
 
   /**
-   * Live read of the current user's profile from DynamoDB with mock fallback.
-   * Resolves the current user id (demo: seeded user) then loads the profile via
-   * the async DynamoDB user lookup. Any error is logged and the seeded user is
-   * returned so the UI never breaks.
+   * Returns the currently authenticated user mapped to the app `User` type.
+   * Identity comes from Clerk; app-specific stats (plan/streak/goal) come from
+   * the seeded profile. Falls back to the seeded user when unauthenticated.
+   */
+  async getCurrentUser(): Promise<User> {
+    const clerk = await resolveClerkUser()
+    const seed = userRepository.getCurrent()
+    if (!clerk) return seed
+
+    const name = clerk.fullName || clerk.emailAddress || seed.name
+    return {
+      id: clerk.id,
+      name,
+      email: clerk.emailAddress || seed.email,
+      initials: deriveInitials(name),
+      plan: seed.plan,
+      streak: seed.streak,
+      goal: seed.goal,
+    }
+  },
+
+  /**
+   * Live read of the current user. Identity is resolved from Clerk; kept as a
+   * distinct method so existing callers (e.g. /api/auth) stay stable.
    */
   async getCurrentUserLive(): Promise<User> {
-    const current = userRepository.getCurrent()
-    if (!current.id) return current
-    try {
-      const user = await userRepository.findById(current.id)
-      return user ?? current
-    } catch (error) {
-      console.error('[v0] authService.getCurrentUserLive DynamoDB error:', error)
-      return current
-    }
+    return this.getCurrentUser()
   },
 
   /** Whether Clerk authentication is configured. */

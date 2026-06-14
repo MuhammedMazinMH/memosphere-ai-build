@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useUser } from "@clerk/nextjs"
 import { toast } from "sonner"
 import { User, Bell, Shield, Flame, Target, Trash2 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -17,10 +18,8 @@ import {
   FieldLabel,
   FieldDescription,
 } from "@/components/ui/field"
-import { authService } from "@/lib/services"
+import { user as seedProfile } from "@/lib/mock-data"
 import { PageHeader } from "@/components/dashboard/page-header"
-
-const user = authService.getCurrentUser()
 
 const notifications = [
   { id: "weekly", label: "Weekly progress digest", desc: "A summary of what you studied each week.", on: true },
@@ -30,9 +29,33 @@ const notifications = [
 ]
 
 export function ProfileView() {
+  const { user: clerkUser } = useUser()
   const [notifState, setNotifState] = useState(() =>
     Object.fromEntries(notifications.map((n) => [n.id, n.on])),
   )
+
+  const name =
+    clerkUser?.fullName ||
+    clerkUser?.primaryEmailAddress?.emailAddress ||
+    seedProfile.name
+  const initials =
+    (name
+      .split(/\s+/)
+      .map((part) => part[0])
+      .filter(Boolean)
+      .join("")
+      .slice(0, 2)
+      .toUpperCase()) || "U"
+
+  // Identity (name/email/initials) comes from the authenticated Clerk session;
+  // app-specific stats (streak/goal) come from the seeded profile.
+  const user = {
+    name,
+    email: clerkUser?.primaryEmailAddress?.emailAddress ?? seedProfile.email,
+    initials,
+    streak: seedProfile.streak,
+    goal: seedProfile.goal,
+  }
 
   return (
     <Tabs defaultValue="profile" className="gap-6">

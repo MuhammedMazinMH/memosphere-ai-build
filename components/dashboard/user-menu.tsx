@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useClerk, useUser } from "@clerk/nextjs"
 import { ChevronsUpDown, LogOut, User } from "lucide-react"
 import {
   DropdownMenu,
@@ -19,13 +20,32 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { authService } from "@/lib/services"
-
-const user = authService.getCurrentUser()
-
 export function UserMenu() {
   const router = useRouter()
   const { isMobile } = useSidebar()
+  const { user: clerkUser } = useUser()
+  const { signOut } = useClerk()
+
+  const name =
+    clerkUser?.fullName ||
+    clerkUser?.primaryEmailAddress?.emailAddress ||
+    "Account"
+  const email = clerkUser?.primaryEmailAddress?.emailAddress ?? ""
+  const initials =
+    (name
+      .split(/\s+/)
+      .map((part) => part[0])
+      .filter(Boolean)
+      .join("")
+      .slice(0, 2)
+      .toUpperCase()) || "U"
+
+  const user = { name, email, initials }
+
+  async function handleLogout() {
+    await signOut()
+    router.push("/")
+  }
 
   return (
     <SidebarMenu>
@@ -80,7 +100,7 @@ export function UserMenu() {
               <DropdownMenuItem render={<Link href="/dashboard/profile"><User />Profile</Link>} />
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push("/")}>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
               Log out
             </DropdownMenuItem>

@@ -14,13 +14,15 @@ import { ActivityFeed } from "@/components/dashboard/activity-feed"
 import { subjectService, authService } from "@/lib/services"
 
 const subjects = subjectService.getSubjects()
-const user = authService.getCurrentUser()
 
 export const metadata: Metadata = {
   title: "Dashboard",
 }
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const user = await authService.getCurrentUser()
+  console.log("[v0] DASHBOARD_USER", user)
+
   return (
     <>
       <PageHeader
