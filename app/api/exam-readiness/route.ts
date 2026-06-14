@@ -6,7 +6,7 @@
  *   active AI provider via examReadinessService; reads are synchronous today.
  */
 import { examReadinessService } from '@/lib/services'
-import { authService } from '@/lib/services/auth/auth-service'
+import { authService } from '@/lib/services/auth/auth-service.server'
 import { ok } from '@/lib/api/response'
 
 export async function GET() {

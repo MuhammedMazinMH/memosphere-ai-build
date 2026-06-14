@@ -4,8 +4,13 @@
  * Single import surface for the application's services. UI components and route
  * handlers should import from here (or the individual service modules) and must
  * not import db/* or db/seed directly.
+ *
+ * NOTE: `authService` is intentionally NOT exported here. It is server-only
+ * (it imports `@clerk/nextjs/server`) and this barrel is consumed by Client
+ * Components. Import it directly from
+ * `@/lib/services/auth/auth-service.server` in Server Components and Route
+ * Handlers only.
  */
-export { authService } from '@/lib/services/auth/auth-service'
 export { subjectService } from '@/lib/services/subjects/subject-service'
 export { documentService } from '@/lib/services/documents/document-service'
 export { summaryService } from '@/lib/services/summaries/summary-service'

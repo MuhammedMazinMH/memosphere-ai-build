@@ -11,6 +11,7 @@
  * server-only. Client components must read the user via Clerk's `useUser()`
  * hook instead of importing this service.
  */
+import 'server-only'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { features } from '@/config/env'
 import { userRepository } from '@/db/repositories/user-repository'

@@ -11,7 +11,8 @@ import { AICoachWidget } from "@/components/dashboard/ai-coach-widget"
 import { LearningIntelligence } from "@/components/dashboard/learning-intelligence"
 import { SubjectCard } from "@/components/dashboard/subject-card"
 import { ActivityFeed } from "@/components/dashboard/activity-feed"
-import { subjectService, authService } from "@/lib/services"
+import { subjectService } from "@/lib/services"
+import { authService } from "@/lib/services/auth/auth-service.server"
 
 const subjects = subjectService.getSubjects()
 
