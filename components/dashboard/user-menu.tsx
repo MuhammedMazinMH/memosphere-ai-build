@@ -26,16 +26,10 @@ export function UserMenu() {
   const { user } = useUser()
   const { signOut } = useClerk()
 
-  console.log("CLERK USER", {
-    id: user?.id,
-    firstName: user?.firstName,
-    lastName: user?.lastName,
-    email: user?.primaryEmailAddress?.emailAddress,
-  })
-
   // Identity comes exclusively from the active Clerk session.
   const name = user?.fullName || user?.primaryEmailAddress?.emailAddress || ""
   const email = user?.primaryEmailAddress?.emailAddress ?? ""
+  const imageUrl = user?.hasImage ? user.imageUrl : undefined
   const initials =
     name
       .split(/\s+/)
@@ -61,6 +55,7 @@ export function UserMenu() {
                 className="data-[popup-open]:bg-sidebar-accent"
               >
                 <Avatar className="size-8 rounded-lg">
+                  {imageUrl ? <AvatarImage src={imageUrl} alt={name} /> : null}
                   <AvatarFallback className="rounded-lg bg-primary text-primary-foreground text-xs">
                     {initials}
                   </AvatarFallback>
@@ -85,6 +80,7 @@ export function UserMenu() {
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                   <Avatar className="size-8 rounded-lg">
+                    {imageUrl ? <AvatarImage src={imageUrl} alt={name} /> : null}
                     <AvatarFallback className="rounded-lg bg-primary text-primary-foreground text-xs">
                       {initials}
                     </AvatarFallback>

@@ -11,6 +11,7 @@ import { AICoachWidget } from "@/components/dashboard/ai-coach-widget"
 import { LearningIntelligence } from "@/components/dashboard/learning-intelligence"
 import { ActivityFeed } from "@/components/dashboard/activity-feed"
 import { authService } from "@/lib/services/auth/auth-service.server"
+import { settingsRepository } from "@/db/repositories/settings-repository"
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -21,22 +22,18 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic"
 
 export default async function DashboardPage() {
-  const clerkUser = await authService.getClerkUser()
-  console.log("CLERK USER", {
-    id: clerkUser?.id,
-    firstName: clerkUser?.firstName,
-    lastName: clerkUser?.lastName,
-    email: clerkUser?.emailAddress,
-  })
-
   const user = await authService.getCurrentUser()
   const firstName = user.name.split(" ")[0]
+
+  // Study goal is user-owned content persisted in DynamoDB, scoped by user id.
+  const settings = user.id ? await settingsRepository.get(user.id) : null
+  const goal = settings?.studyGoal ?? ""
 
   return (
     <>
       <PageHeader
         title={firstName ? `Welcome back, ${firstName}` : "Welcome back"}
-        description={user.goal ? `${user.goal} \u00B7 ${user.streak}-day streak` : `${user.streak}-day streak`}
+        description={goal ? `${goal} \u00B7 ${user.streak}-day streak` : `${user.streak}-day streak`}
       >
         <Badge variant="secondary" className="gap-1">
           <Flame className="size-3.5 text-chart-4" />

@@ -56,7 +56,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  console.log("[v0] PUBLISHABLE_KEY_PRESENT", !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)
   return (
     <ClerkProvider>
       <html

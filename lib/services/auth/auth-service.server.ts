@@ -3,9 +3,9 @@
  *
  * This is the single place the rest of the app asks "who is the current user?".
  * Identity (id, name, email, avatar) is resolved from the active Clerk session
- * on the server via `auth()` / `currentUser()`. App-specific profile stats that
- * Clerk does not store (plan, streak, goal) are still sourced from the seeded
- * profile so the dashboard renders identically — DynamoDB is left untouched.
+ * on the server via `auth()` / `currentUser()`. App-specific stats that Clerk
+ * does not store (plan, streak) are read from Clerk public metadata; the study
+ * goal/bio live in DynamoDB (see settings-repository) scoped by user id.
  *
  * NOTE: This module imports `@clerk/nextjs/server` and is therefore
  * server-only. Client components must read the user via Clerk's `useUser()`
@@ -45,7 +45,6 @@ function deriveInitials(name: string): string {
 async function resolveClerkUser(): Promise<ClerkSessionUser | null> {
   const { userId } = await auth()
   if (!userId) {
-    console.log('[v0] CLERK_USER', null)
     return null
   }
 
@@ -71,7 +70,6 @@ async function resolveClerkUser(): Promise<ClerkSessionUser | null> {
     goal: String(metadata.goal ?? ''),
   }
 
-  console.log('[v0] CLERK_USER', clerkUser)
   return clerkUser
 }
 

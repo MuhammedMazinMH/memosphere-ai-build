@@ -39,15 +39,8 @@ export function SignUpForm() {
 
   const loading = fetchStatus === "fetching"
 
-  console.log("[v0] NAME_STATE", name)
-  console.log("[v0] EMAIL_STATE", email)
-  console.log("[v0] PASSWORD_STATE", password)
-  console.log("[v0] VERIFICATION_CODE_STATE", verificationCode)
-
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    console.log("[v0] SUBMIT_CLICKED")
     e.preventDefault()
-    console.log("[v0] SIGNUP_OBJECT", signUp)
     if (!signUp) return
     setFormError(null)
 
@@ -55,7 +48,6 @@ export function SignUpForm() {
     const [firstName, ...rest] = fullName.split(" ")
     const lastName = rest.join(" ")
 
-    console.log("[v0] SIGNUP_PASSWORD_START")
     // v6 method: signUp.password() — creates account + sends verification
     const { error: createError } = await signUp.password({
       emailAddress: email.trim(),
@@ -65,24 +57,18 @@ export function SignUpForm() {
     })
 
     if (createError) {
-      console.error("[v0] SIGNUP_PASSWORD_ERROR", createError)
       setFormError(createError.longMessage ?? createError.message ?? "Something went wrong. Please try again.")
       return
     }
-
-    console.log("[v0] SIGNUP_PASSWORD_SUCCESS")
-    console.log("[v0] SEND_EMAIL_CODE_START")
 
     // v6: verifications.sendEmailCode() — triggers the email verification code
     const { error: verifyError } = await signUp.verifications.sendEmailCode()
 
     if (verifyError) {
-      console.error("[v0] SEND_EMAIL_CODE_ERROR", verifyError)
       setFormError(verifyError.longMessage ?? verifyError.message ?? "Failed to send verification code.")
       return
     }
 
-    console.log("[v0] SEND_EMAIL_CODE_SUCCESS")
     // Guarantee the verification code field starts empty and independent.
     setVerificationCode("")
     setPendingVerification(true)
@@ -93,29 +79,34 @@ export function SignUpForm() {
     if (!signUp) return
     setFormError(null)
 
-    console.log("[v0] VERIFY_EMAIL_CODE_START")
     // v6: verifications.verifyEmailCode() — attempts the code
     const { error: codeError } = await signUp.verifications.verifyEmailCode({ code: verificationCode })
 
     if (codeError) {
-      console.error("[v0] VERIFY_EMAIL_CODE_ERROR", codeError)
       setFormError(codeError.longMessage ?? codeError.message ?? "Invalid verification code.")
       return
     }
-
-    console.log("[v0] VERIFY_EMAIL_CODE_SUCCESS")
-    console.log("[v0] FINALIZE_START")
 
     // v6: finalize() replaces setActive({ session }) — activates the new session
     const { error: finalizeError } = await signUp.finalize()
 
     if (finalizeError) {
-      console.error("[v0] FINALIZE_ERROR", finalizeError)
       setFormError(finalizeError.longMessage ?? finalizeError.message ?? "Could not complete sign-up.")
       return
     }
 
-    console.log("[v0] FINALIZE_SUCCESS")
+    // Emit a one-time welcome notification for the new account. Best-effort:
+    // never block the redirect on it.
+    try {
+      await fetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "account_created" }),
+      })
+    } catch {
+      // ignore — the welcome notification is non-critical
+    }
+
     router.push("/dashboard")
   }
 

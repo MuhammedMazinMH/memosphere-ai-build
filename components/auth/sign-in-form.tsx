@@ -13,41 +13,6 @@ import { Eye, EyeOff } from "lucide-react"
 
 type Step = "credentials" | "code"
 
-// Builds a plain, JSON-serializable snapshot of the Clerk signIn object so the
-// logs print actual contents instead of "[object Object]".
-function snapshotSignIn(signIn: any) {
-  if (!signIn) return null
-  return {
-    id: signIn.id,
-    status: signIn.status,
-    createdSessionId: signIn.createdSessionId,
-    identifier: signIn.identifier,
-    isTransferable: signIn.isTransferable,
-    existingSession: signIn.existingSession ?? null,
-    supportedFirstFactors: signIn.supportedFirstFactors ?? null,
-    supportedSecondFactors: signIn.supportedSecondFactors ?? null,
-    firstFactorVerification: signIn.firstFactorVerification
-      ? {
-          status: signIn.firstFactorVerification.status,
-          strategy: signIn.firstFactorVerification.strategy,
-          error: signIn.firstFactorVerification.error,
-        }
-      : null,
-    secondFactorVerification: signIn.secondFactorVerification
-      ? {
-          status: signIn.secondFactorVerification.status,
-          strategy: signIn.secondFactorVerification.strategy,
-          error: signIn.secondFactorVerification.error,
-        }
-      : null,
-    userData: signIn.userData ?? null,
-  }
-}
-
-function logSignIn(label: string, signIn: any) {
-  console.log(`[v0] ${label}`, JSON.stringify(snapshotSignIn(signIn), null, 2))
-}
-
 export function SignInForm() {
   const router = useRouter()
   // v6 Signal API: returns { signIn, errors, fetchStatus }
@@ -70,7 +35,6 @@ export function SignInForm() {
     const { error } = await signIn.finalize({
       navigate: () => router.push("/dashboard"),
     })
-    console.log("[v0] SIGNIN_FINALIZE_ERROR", JSON.stringify(error, null, 2))
     if (error) {
       setFormError(error.longMessage ?? error.message ?? "Could not complete sign-in.")
       return false
@@ -85,7 +49,6 @@ export function SignInForm() {
 
     // Already authenticated (e.g. signed up moments ago): no new session.
     if (signIn.existingSession?.sessionId) {
-      console.log("[v0] SIGNIN_EXISTING_SESSION", signIn.existingSession.sessionId)
       router.push("/dashboard")
       return
     }
@@ -102,7 +65,6 @@ export function SignInForm() {
       )
       if (emailFactor) {
         const { error } = await signIn.emailCode.sendCode()
-        console.log("[v0] SIGNIN_SEND_FIRST_FACTOR_EMAIL", JSON.stringify(error, null, 2))
         if (error) {
           setFormError(error.longMessage ?? error.message ?? "Could not send verification code.")
           return
@@ -135,7 +97,6 @@ export function SignInForm() {
       }
       if (hasPhone) {
         const { error } = await signIn.mfa.sendPhoneCode()
-        console.log("[v0] SIGNIN_SEND_MFA_PHONE", JSON.stringify(error, null, 2))
         if (error) {
           setFormError(error.longMessage ?? error.message ?? "Could not send verification code.")
           return
@@ -146,7 +107,6 @@ export function SignInForm() {
       }
       if (hasEmail) {
         const { error } = await signIn.mfa.sendEmailCode()
-        console.log("[v0] SIGNIN_SEND_MFA_EMAIL", JSON.stringify(error, null, 2))
         if (error) {
           setFormError(error.longMessage ?? error.message ?? "Could not send verification code.")
           return
@@ -179,20 +139,6 @@ export function SignInForm() {
 
     const passwordResult = await signIn.password({ identifier: email, password })
 
-    // Full diagnostic dump of the Clerk response + signIn state.
-    console.log("[v0] SIGNIN_PASSWORD_ERROR", JSON.stringify(passwordResult.error, null, 2))
-    logSignIn("SIGNIN_STATE_AFTER_PASSWORD", signIn)
-    console.log("[v0] SIGNIN_STATUS", signIn.status)
-    console.log("[v0] SIGNIN_CREATED_SESSION_ID", signIn.createdSessionId)
-    console.log(
-      "[v0] SIGNIN_SUPPORTED_FIRST_FACTORS",
-      JSON.stringify(signIn.supportedFirstFactors ?? null, null, 2),
-    )
-    console.log(
-      "[v0] SIGNIN_SUPPORTED_SECOND_FACTORS",
-      JSON.stringify(signIn.supportedSecondFactors ?? null, null, 2),
-    )
-
     if (passwordResult.error) {
       setFormError(
         passwordResult.error.longMessage ??
@@ -210,8 +156,6 @@ export function SignInForm() {
     if (!signIn) return
     setFormError(null)
 
-    console.log("[v0] SIGNIN_STATUS_BEFORE_VERIFY", signIn.status)
-
     let result: { error: any } = { error: null }
     if (codeMode === "first_factor_email") {
       result = await signIn.emailCode.verifyCode({ code })
@@ -222,11 +166,6 @@ export function SignInForm() {
     } else if (codeMode === "mfa_totp") {
       result = await signIn.mfa.verifyTOTP({ code })
     }
-
-    console.log("[v0] SIGNIN_VERIFY_ERROR", JSON.stringify(result.error, null, 2))
-    console.log("[v0] SIGNIN_STATUS_AFTER_VERIFY", signIn.status)
-    console.log("[v0] SIGNIN_CREATED_SESSION_ID_AFTER_VERIFY", signIn.createdSessionId)
-    logSignIn("SIGNIN_STATE_AFTER_VERIFY", signIn)
 
     if (result.error) {
       setFormError(result.error.longMessage ?? result.error.message ?? "Invalid verification code.")
