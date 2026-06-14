@@ -9,12 +9,8 @@ import { KnowledgeGrowthChart } from "@/components/dashboard/knowledge-growth-ch
 import { StudyActivityChart } from "@/components/dashboard/study-activity-chart"
 import { AICoachWidget } from "@/components/dashboard/ai-coach-widget"
 import { LearningIntelligence } from "@/components/dashboard/learning-intelligence"
-import { SubjectCard } from "@/components/dashboard/subject-card"
 import { ActivityFeed } from "@/components/dashboard/activity-feed"
-import { subjectService } from "@/lib/services"
 import { authService } from "@/lib/services/auth/auth-service.server"
-
-const subjects = subjectService.getSubjects()
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -40,7 +36,7 @@ export default async function DashboardPage() {
     <>
       <PageHeader
         title={firstName ? `Welcome back, ${firstName}` : "Welcome back"}
-        description={`${user.goal} \u00B7 ${user.streak}-day streak`}
+        description={user.goal ? `${user.goal} \u00B7 ${user.streak}-day streak` : `${user.streak}-day streak`}
       >
         <Badge variant="secondary" className="gap-1">
           <Flame className="size-3.5 text-chart-4" />
@@ -49,10 +45,10 @@ export default async function DashboardPage() {
       </PageHeader>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Documents" value="84" change="+12 this month" icon={FileStack} />
-        <StatCard label="Concepts learned" value="673" change="+153 this month" icon={Lightbulb} />
-        <StatCard label="Study streak" value="14 days" change="Personal best" icon={Flame} />
-        <StatCard label="Avg. mastery" value="66%" change="+8% this month" icon={Target} />
+        <StatCard label="Documents" value="0" icon={FileStack} />
+        <StatCard label="Concepts learned" value="0" icon={Lightbulb} />
+        <StatCard label="Study streak" value="0 days" icon={Flame} />
+        <StatCard label="Avg. mastery" value="0%" icon={Target} />
       </div>
 
       <AICoachWidget />
@@ -79,10 +75,12 @@ export default async function DashboardPage() {
               }
             />
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {subjects.slice(0, 4).map((s) => (
-              <SubjectCard key={s.id} subject={s} />
-            ))}
+          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-card/50 p-10 text-center">
+            <FileStack className="size-6 text-muted-foreground" />
+            <p className="text-sm font-medium">No subjects yet</p>
+            <p className="text-sm text-muted-foreground text-pretty">
+              Create a subject to start organizing your documents and concepts.
+            </p>
           </div>
         </div>
         <div className="flex flex-col gap-4">

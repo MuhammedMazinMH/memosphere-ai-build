@@ -1,6 +1,3 @@
-"use client"
-
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
 import {
   Card,
   CardContent,
@@ -8,19 +5,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart"
-import { analyticsService } from "@/lib/services"
-
-const studyActivity = analyticsService.getStudyActivity()
-
-const config = {
-  minutes: { label: "Minutes", color: "var(--chart-1)" },
-} satisfies ChartConfig
 
 export function StudyActivityChart() {
   return (
@@ -30,14 +14,12 @@ export function StudyActivityChart() {
         <CardDescription>Minutes studied this week</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={config} className="aspect-auto h-[260px] w-full">
-          <BarChart data={studyActivity} margin={{ top: 8 }}>
-            <CartesianGrid vertical={false} strokeDasharray="3 3" />
-            <XAxis dataKey="day" tickLine={false} axisLine={false} tickMargin={8} />
-            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-            <Bar dataKey="minutes" fill="var(--color-minutes)" radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ChartContainer>
+        <div className="flex h-[260px] w-full flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border text-center">
+          <p className="text-sm font-medium">No learning activity yet</p>
+          <p className="text-sm text-muted-foreground">
+            Study sessions you log will show up here.
+          </p>
+        </div>
       </CardContent>
     </Card>
   )
