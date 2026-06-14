@@ -37,7 +37,15 @@ type TableResult = {
   errorType: string | null
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  // Optional `?only=subjects[,documents,...]` to seed a subset of tables. When
+  // omitted, every table is seeded. Used to re-run a single table in isolation
+  // without touching the others.
+  const onlyParam = new URL(request.url).searchParams.get('only')
+  const onlyTables = onlyParam
+    ? new Set(onlyParam.split(',').map((t) => t.trim()).filter(Boolean))
+    : null
+
   const region = process.env.AWS_REGION
   const keyId = process.env.AWS_ACCESS_KEY_ID
   const secret = process.env.AWS_SECRET_ACCESS_KEY
@@ -105,7 +113,20 @@ export async function GET() {
     // users (pk: id)
     ['users', [{ id: DEMO_USER_ID, ...seed.user }]],
     // subjects (pk: id)
-    ['subjects', seed.subjects as Record<string, unknown>[]],
+    // NOTE: each seed subject carries an `icon` field that is a Lucide React
+    // component (a forwardRef object whose `$$typeof` is a Symbol). DynamoDB's
+    // marshaller cannot serialize a Symbol and throws
+    // "Cannot convert a Symbol value to a string". We replace the component
+    // with its string name (`iconName`) so the record is serializable. The UI
+    // continues to read icons from the in-memory mock data, unaffected.
+    [
+      'subjects',
+      (seed.subjects as Record<string, unknown>[]).map((s) => {
+        const { icon, ...rest } = s as { icon?: { displayName?: string; name?: string } }
+        const iconName = icon?.displayName ?? icon?.name ?? 'BookMarked'
+        return { ...rest, iconName }
+      }),
+    ],
     // documents (pk: id)
     ['documents', seed.knowledgeItems as Record<string, unknown>[]],
     // concepts (pk: id)
@@ -142,6 +163,8 @@ export async function GET() {
 
   const results: TableResult[] = []
   for (const [table, items] of operations) {
+    // Skip tables not requested when an `only` filter is supplied.
+    if (onlyTables && !onlyTables.has(table)) continue
     results.push(await writeTable(table, items))
   }
 
