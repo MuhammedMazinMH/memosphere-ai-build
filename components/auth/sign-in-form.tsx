@@ -119,7 +119,10 @@ export function SignInForm() {
       return
     }
 
-    if (signIn.status === "needs_second_factor") {
+    // Both statuses require a second factor before a session is created:
+    //  - needs_second_factor: standard 2FA
+    //  - needs_client_trust:  signing in from a new/untrusted device
+    if (signIn.status === "needs_second_factor" || signIn.status === "needs_client_trust") {
       const second = signIn.supportedSecondFactors ?? []
       const hasTOTP = second.some((f: any) => f.strategy === "totp")
       const hasPhone = second.some((f: any) => f.strategy === "phone_code")
@@ -161,7 +164,7 @@ export function SignInForm() {
       return
     }
 
-    // needs_identifier / needs_client_trust / unknown
+    // needs_identifier / unknown — genuinely unsupported here.
     setFormError(`Additional verification is required to sign in (status: ${signIn.status ?? "unknown"}).`)
   }
 
@@ -207,6 +210,8 @@ export function SignInForm() {
     if (!signIn) return
     setFormError(null)
 
+    console.log("[v0] SIGNIN_STATUS_BEFORE_VERIFY", signIn.status)
+
     let result: { error: any } = { error: null }
     if (codeMode === "first_factor_email") {
       result = await signIn.emailCode.verifyCode({ code })
@@ -219,6 +224,8 @@ export function SignInForm() {
     }
 
     console.log("[v0] SIGNIN_VERIFY_ERROR", JSON.stringify(result.error, null, 2))
+    console.log("[v0] SIGNIN_STATUS_AFTER_VERIFY", signIn.status)
+    console.log("[v0] SIGNIN_CREATED_SESSION_ID_AFTER_VERIFY", signIn.createdSessionId)
     logSignIn("SIGNIN_STATE_AFTER_VERIFY", signIn)
 
     if (result.error) {
