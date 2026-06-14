@@ -14,6 +14,8 @@ import { env } from '@/config/env'
 /** Logical table identifiers. */
 export type TableName =
   | 'users'
+  | 'userSettings'
+  | 'notifications'
   | 'subjects'
   | 'documents'
   | 'concepts'
@@ -38,6 +40,14 @@ export interface TableSchema {
 /** Canonical schema for every table in the application. */
 export const TABLES: Record<TableName, TableSchema> = {
   users: { base: 'users', partitionKey: 'id' },
+  // One settings item per user (study goal, bio, notification preferences).
+  userSettings: { base: 'user_settings', partitionKey: 'userId' },
+  // Per-user notifications, sorted by their unique id.
+  notifications: {
+    base: 'notifications',
+    partitionKey: 'userId',
+    sortKey: 'id',
+  },
   subjects: { base: 'subjects', partitionKey: 'id' },
   documents: { base: 'documents', partitionKey: 'id' },
   concepts: { base: 'concepts', partitionKey: 'id' },

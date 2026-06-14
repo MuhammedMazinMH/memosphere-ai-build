@@ -1,10 +1,32 @@
-import { clerkMiddleware } from '@clerk/nextjs/server'
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { NextResponse } from 'next/server'
 
-// Latest App Router approach. By default `clerkMiddleware` does NOT protect any
-// routes — it only makes the auth/session context available to the app. No
-// route protection is configured yet so all existing routes and pages behave
-// exactly as before.
-export default clerkMiddleware()
+// Authenticated areas: the dashboard UI and the app's data APIs.
+const isProtectedRoute = createRouteMatcher([
+  '/dashboard(.*)',
+  '/api/settings(.*)',
+  '/api/notifications(.*)',
+  '/api/account(.*)',
+])
+
+// Admin-only areas. Role is enforced authoritatively in the admin server
+// component and the /api/admin handlers (via isAdmin); the middleware adds a
+// first layer so unauthenticated users never reach them.
+const isAdminRoute = createRouteMatcher(['/dashboard/admin(.*)', '/api/admin(.*)'])
+
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtectedRoute(req) || isAdminRoute(req)) {
+    const { userId } = await auth()
+    if (!userId) {
+      // API callers get a 401; page visitors are sent to sign-in.
+      if (req.nextUrl.pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+      const signIn = new URL('/sign-in', req.url)
+      return NextResponse.redirect(signIn)
+    }
+  }
+})
 
 export const config = {
   matcher: [

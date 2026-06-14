@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useUser } from "@clerk/nextjs"
 import {
   LayoutDashboard,
   Library,
@@ -50,13 +51,19 @@ const insightsNav = [
   { title: "Exam Readiness", href: "/dashboard/exam-readiness", icon: GraduationCap },
 ]
 
-const systemNav = [
+const settingsNav = [
   { title: "Settings", href: "/dashboard/profile", icon: Settings },
-  { title: "Admin", href: "/dashboard/admin", icon: Shield },
 ]
+
+const adminNav = [{ title: "Admin", href: "/dashboard/admin", icon: Shield }]
 
 export function DashboardSidebar() {
   const pathname = usePathname()
+  const { user } = useUser()
+  // Admin nav is shown only to users with the admin role in Clerk metadata.
+  // The /admin route + APIs are independently protected on the server.
+  const isAdmin = user?.publicMetadata?.role === "admin"
+  const systemNav = isAdmin ? [...settingsNav, ...adminNav] : settingsNav
 
   function isActive(href: string) {
     if (href === "/dashboard") return pathname === "/dashboard"

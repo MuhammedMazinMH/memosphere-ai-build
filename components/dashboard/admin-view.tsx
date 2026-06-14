@@ -1,16 +1,21 @@
 "use client"
 
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { Users, FileText, Layers, Activity } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState } from "react"
+import useSWR from "swr"
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart"
+  Users,
+  UserPlus,
+  Activity,
+  FolderKanban,
+  FileText,
+  Layers,
+  Search,
+} from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Input } from "@/components/ui/input"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
   TableBody,
@@ -19,163 +24,233 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { analyticsService } from "@/lib/services"
 import { PageHeader } from "@/components/dashboard/page-header"
 
-const adminStats = analyticsService.getAdminStats()
+interface StatsResponse {
+  users: { total: number; newThisWeek: number; active: number }
+  content: {
+    subjects: number
+    documents: number
+    concepts: number
+    settings: number
+    notifications: number
+  }
+}
 
-const growthConfig = {
-  users: { label: "Users", color: "var(--chart-1)" },
-} satisfies ChartConfig
+interface AdminUser {
+  id: string
+  name: string
+  email: string
+  imageUrl: string
+  role: "admin" | "user"
+  createdAt: number
+  lastActiveAt: number | null
+}
 
-const engagementConfig = {
-  usage: { label: "Usage %", color: "var(--chart-2)" },
-} satisfies ChartConfig
+const fetcher = (url: string) =>
+  fetch(url).then((r) => {
+    if (!r.ok) throw new Error("Request failed")
+    return r.json()
+  })
 
-const recentUsers = [
-  { name: "Priya Menon", email: "priya@uni.edu", plan: "Pro", docs: 142, status: "active" },
-  { name: "Liam Carter", email: "liam@uni.edu", plan: "Free", docs: 38, status: "active" },
-  { name: "Sofia Rossi", email: "sofia@uni.edu", plan: "Pro", docs: 219, status: "active" },
-  { name: "Kenji Tanaka", email: "kenji@uni.edu", plan: "Free", docs: 12, status: "inactive" },
-  { name: "Amara Okafor", email: "amara@uni.edu", plan: "Pro", docs: 87, status: "active" },
-]
+function initialsOf(name: string, email: string) {
+  const base = name && name !== "—" ? name : email
+  return (
+    base
+      .split(/\s+/)
+      .map((p) => p[0])
+      .filter(Boolean)
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "U"
+  )
+}
 
-const stats = [
-  { label: "Total users", value: adminStats.totalUsers.toLocaleString(), icon: Users, color: "var(--chart-1)" },
-  { label: "Documents", value: adminStats.totalDocuments.toLocaleString(), icon: FileText, color: "var(--chart-2)" },
-  { label: "Concepts mapped", value: `${(adminStats.totalConcepts / 1_000_000).toFixed(2)}M`, icon: Layers, color: "var(--chart-3)" },
-  { label: "Active today", value: adminStats.activeToday.toLocaleString(), icon: Activity, color: "var(--chart-4)" },
-]
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  color,
+  loading,
+}: {
+  label: string
+  value: number
+  icon: typeof Users
+  color: string
+  loading: boolean
+}) {
+  return (
+    <Card>
+      <CardContent className="flex items-center gap-4 py-6">
+        <div
+          className="flex size-11 items-center justify-center rounded-lg"
+          style={{
+            backgroundColor: `color-mix(in oklch, ${color} 15%, transparent)`,
+            color,
+          }}
+        >
+          <Icon className="size-5" />
+        </div>
+        <div>
+          {loading ? (
+            <Skeleton className="h-8 w-16" />
+          ) : (
+            <p className="text-2xl font-semibold tabular-nums">{value.toLocaleString()}</p>
+          )}
+          <p className="text-sm text-muted-foreground">{label}</p>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 export function AdminView() {
+  const [search, setSearch] = useState("")
+  const { data: stats, isLoading: statsLoading } = useSWR<StatsResponse>(
+    "/api/admin/stats",
+    fetcher,
+  )
+  const { data: usersData, isLoading: usersLoading } = useSWR<{
+    users: AdminUser[]
+    total: number
+  }>(`/api/admin/users?q=${encodeURIComponent(search)}`, fetcher, {
+    keepPreviousData: true,
+  })
+
+  const users = usersData?.users ?? []
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Admin Analytics"
-        description="Platform-wide usage, growth, and engagement metrics."
+        title="Admin"
+        description="Real platform metrics from Clerk and DynamoDB."
       />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((s) => (
-          <Card key={s.label}>
-            <CardContent className="flex items-center gap-4 py-6">
-              <div
-                className="flex size-11 items-center justify-center rounded-lg"
-                style={{
-                  backgroundColor: `color-mix(in oklch, ${s.color} 15%, transparent)`,
-                  color: s.color,
-                }}
-              >
-                <s.icon className="size-5" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold tabular-nums">{s.value}</p>
-                <p className="text-sm text-muted-foreground">{s.label}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
 
-      <div className="grid gap-6 lg:grid-cols-5">
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>User growth</CardTitle>
-            <CardDescription>Total registered users over the last 6 months</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={growthConfig} className="aspect-auto h-[280px] w-full">
-              <AreaChart data={adminStats.userGrowth} margin={{ top: 8, right: 8 }}>
-                <defs>
-                  <linearGradient id="fillUsers" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-users)" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="var(--color-users)" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis tickLine={false} axisLine={false} width={44} />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                <Area
-                  dataKey="users"
-                  type="monotone"
-                  stroke="var(--color-users)"
-                  strokeWidth={2}
-                  fill="url(#fillUsers)"
-                />
-              </AreaChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium text-muted-foreground">User analytics</h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <StatCard
+            label="Total users"
+            value={stats?.users.total ?? 0}
+            icon={Users}
+            color="var(--chart-1)"
+            loading={statsLoading}
+          />
+          <StatCard
+            label="New this week"
+            value={stats?.users.newThisWeek ?? 0}
+            icon={UserPlus}
+            color="var(--chart-2)"
+            loading={statsLoading}
+          />
+          <StatCard
+            label="Active users"
+            value={stats?.users.active ?? 0}
+            icon={Activity}
+            color="var(--chart-4)"
+            loading={statsLoading}
+          />
+        </div>
+      </section>
 
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Feature engagement</CardTitle>
-            <CardDescription>Adoption by feature</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={engagementConfig} className="aspect-auto h-[280px] w-full">
-              <BarChart data={adminStats.engagement} layout="vertical" margin={{ left: 12 }}>
-                <CartesianGrid horizontal={false} strokeDasharray="3 3" />
-                <XAxis type="number" hide domain={[0, 100]} />
-                <YAxis
-                  type="category"
-                  dataKey="feature"
-                  tickLine={false}
-                  axisLine={false}
-                  width={84}
-                />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                <Bar dataKey="usage" fill="var(--color-usage)" radius={[0, 6, 6, 0]} />
-              </BarChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-      </div>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium text-muted-foreground">Content analytics</h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <StatCard
+            label="Subjects"
+            value={stats?.content.subjects ?? 0}
+            icon={FolderKanban}
+            color="var(--chart-3)"
+            loading={statsLoading}
+          />
+          <StatCard
+            label="Documents"
+            value={stats?.content.documents ?? 0}
+            icon={FileText}
+            color="var(--chart-1)"
+            loading={statsLoading}
+          />
+          <StatCard
+            label="Concepts"
+            value={stats?.content.concepts ?? 0}
+            icon={Layers}
+            color="var(--chart-5)"
+            loading={statsLoading}
+          />
+        </div>
+      </section>
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent users</CardTitle>
-          <CardDescription>Latest sign-ups and their activity</CardDescription>
+          <CardTitle>User management</CardTitle>
+          <CardDescription>Search and view registered users.</CardDescription>
+          <div className="relative mt-2 max-w-sm">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name or email..."
+              className="pl-9"
+              aria-label="Search users"
+            />
+          </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead className="text-right">Documents</TableHead>
-                <TableHead className="text-right">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recentUsers.map((u) => (
-                <TableRow key={u.email}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="size-9">
-                        <AvatarFallback className="bg-muted text-xs">
-                          {u.name.split(" ").map((n) => n[0]).join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
-                        <p className="truncate font-medium">{u.name}</p>
-                        <p className="truncate text-sm text-muted-foreground">{u.email}</p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={u.plan === "Pro" ? "default" : "secondary"}>{u.plan}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">{u.docs}</TableCell>
-                  <TableCell className="text-right">
-                    <Badge variant={u.status === "active" ? "secondary" : "outline"}>
-                      {u.status}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
+          {usersLoading && users.length === 0 ? (
+            <div className="flex flex-col gap-3">
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} className="h-12 w-full" />
               ))}
-            </TableBody>
-          </Table>
+            </div>
+          ) : users.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              {search ? "No users match your search." : "No users yet."}
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead className="text-right">Joined</TableHead>
+                  <TableHead className="text-right">Last active</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.map((u) => (
+                  <TableRow key={u.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="size-9">
+                          <AvatarImage src={u.imageUrl || undefined} alt="" />
+                          <AvatarFallback className="bg-muted text-xs">
+                            {initialsOf(u.name, u.email)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{u.name}</p>
+                          <p className="truncate text-sm text-muted-foreground">{u.email}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={u.role === "admin" ? "default" : "secondary"}>
+                        {u.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
+                      {new Date(u.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
+                      {u.lastActiveAt
+                        ? new Date(u.lastActiveAt).toLocaleDateString()
+                        : "—"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
