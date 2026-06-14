@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { useUser, useSession } from "@clerk/nextjs"
-import type { SessionWithActivitiesResource, TOTPResource } from "@clerk/types"
+import type { SessionWithActivitiesResource } from "@clerk/types"
 import { toast } from "sonner"
-import { Loader2, ShieldCheck, ShieldOff, Monitor, Smartphone } from "lucide-react"
+import { Loader2, Monitor, Smartphone } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,7 +20,6 @@ export function SecurityTab() {
   return (
     <div className="flex flex-col gap-6">
       <PasswordCard />
-      <MfaCard />
       <SessionsCard currentSessionId={session?.id} />
       {isLoaded && user && <DeleteAccountDialog />}
     </div>
@@ -120,150 +119,6 @@ function PasswordCard() {
           {busy && <Loader2 className="size-4 animate-spin" />}
           {hasPassword ? "Update password" : "Set password"}
         </Button>
-      </CardFooter>
-    </Card>
-  )
-}
-
-function MfaCard() {
-  const { user } = useUser()
-  const [totp, setTotp] = useState<TOTPResource | null>(null)
-  const [code, setCode] = useState("")
-  const [busy, setBusy] = useState(false)
-
-  const enabled = user?.totpEnabled ?? false
-
-  async function startEnable() {
-    if (!user) return
-    setBusy(true)
-    try {
-      const resource = await user.createTOTP()
-      setTotp(resource)
-    } catch (err) {
-      // Surface the real Clerk error so it's visible in the console and toast.
-      const clerkMsg =
-        (err as { errors?: { longMessage?: string; message?: string }[] })
-          ?.errors?.[0]?.longMessage ??
-        (err as { errors?: { message?: string }[] })?.errors?.[0]?.message ??
-        (err as Error)?.message ??
-        "Could not start MFA setup"
-      console.error("[mfa] createTOTP failed:", err)
-      toast.error(clerkMsg)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function verify() {
-    if (!user) return
-    setBusy(true)
-    try {
-      await user.verifyTOTP({ code })
-      await user.reload()
-      setTotp(null)
-      setCode("")
-      toast.success("Two-factor authentication enabled")
-    } catch (err) {
-      const clerkMsg =
-        (err as { errors?: { longMessage?: string; message?: string }[] })
-          ?.errors?.[0]?.longMessage ??
-        (err as { errors?: { message?: string }[] })?.errors?.[0]?.message ??
-        (err as Error)?.message ??
-        "Invalid code, try again"
-      console.error("[mfa] verifyTOTP failed:", err)
-      toast.error(clerkMsg)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function disable() {
-    if (!user) return
-    setBusy(true)
-    try {
-      await user.disableTOTP()
-      await user.reload()
-      toast.success("Two-factor authentication disabled")
-    } catch (err) {
-      const clerkMsg =
-        (err as { errors?: { longMessage?: string; message?: string }[] })
-          ?.errors?.[0]?.longMessage ??
-        (err as { errors?: { message?: string }[] })?.errors?.[0]?.message ??
-        (err as Error)?.message ??
-        "Could not disable MFA"
-      console.error("[mfa] disableTOTP failed:", err)
-      toast.error(clerkMsg)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <CardTitle>Two-factor authentication</CardTitle>
-            <CardDescription>
-              Add an authenticator app for an extra layer of security.
-            </CardDescription>
-          </div>
-          <Badge variant={enabled ? "default" : "secondary"}>
-            {enabled ? (
-              <>
-                <ShieldCheck className="size-3.5" /> Enabled
-              </>
-            ) : (
-              <>
-                <ShieldOff className="size-3.5" /> Disabled
-              </>
-            )}
-          </Badge>
-        </div>
-      </CardHeader>
-      {totp && !enabled && (
-        <CardContent className="flex flex-col gap-4">
-          <div className="rounded-lg border bg-muted/40 p-4">
-            <p className="text-sm font-medium">Add this key to your authenticator app:</p>
-            <code className="mt-2 block break-all rounded bg-background px-2 py-1.5 text-sm">
-              {totp.secret}
-            </code>
-          </div>
-          <Field>
-            <FieldLabel htmlFor="totp-code">Enter the 6-digit code</FieldLabel>
-            <Input
-              id="totp-code"
-              inputMode="numeric"
-              maxLength={6}
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-              placeholder="123456"
-            />
-          </Field>
-        </CardContent>
-      )}
-      <CardFooter className="justify-end gap-2">
-        {enabled ? (
-          <Button variant="outline" onClick={disable} disabled={busy}>
-            {busy && <Loader2 className="size-4 animate-spin" />}
-            Disable MFA
-          </Button>
-        ) : totp ? (
-          <>
-            <Button variant="ghost" onClick={() => setTotp(null)} disabled={busy}>
-              Cancel
-            </Button>
-            <Button onClick={verify} disabled={busy || code.length !== 6}>
-              {busy && <Loader2 className="size-4 animate-spin" />}
-              Verify &amp; enable
-            </Button>
-          </>
-        ) : (
-          <Button onClick={startEnable} disabled={busy}>
-            {busy && <Loader2 className="size-4 animate-spin" />}
-            Enable MFA
-          </Button>
-        )}
       </CardFooter>
     </Card>
   )
