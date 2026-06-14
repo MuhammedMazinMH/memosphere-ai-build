@@ -181,11 +181,12 @@ export function SignInForm() {
         ? "Enter the code from your authenticator app"
         : "Enter the verification code we sent you"
     return (
-      <form onSubmit={onSubmitCode}>
+      <form key="code-step" onSubmit={onSubmitCode}>
         <FieldGroup>
           <Field>
             <FieldLabel htmlFor="code">Verification code</FieldLabel>
             <Input
+              key="verification-code-input"
               id="code"
               name="code"
               inputMode="numeric"
@@ -221,11 +222,12 @@ export function SignInForm() {
   }
 
   return (
-    <form onSubmit={onSubmitCredentials}>
+    <form key="credentials-step" onSubmit={onSubmitCredentials}>
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
           <Input
+            key="email-input"
             id="email"
             name="email"
             type="email"
