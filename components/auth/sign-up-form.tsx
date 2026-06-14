@@ -4,7 +4,6 @@ import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSignUp } from "@clerk/nextjs"
-import { isClerkAPIResponseError } from "@clerk/nextjs/errors"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Field, FieldGroup, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field"
@@ -25,27 +24,26 @@ const labels = ["Too weak", "Weak", "Fair", "Good", "Strong"]
 
 export function SignUpForm() {
   const router = useRouter()
-  const { isLoaded, signUp, setActive } = useSignUp()
-  const [loading, setLoading] = useState(false)
+  // v6 Signal API: returns { signUp, errors, fetchStatus }
+  // No isLoaded, no setActive — fetchStatus is 'idle' | 'fetching'
+  const { signUp, fetchStatus } = useSignUp()
+
+  console.log("[v0] RAW_USE_SIGNUP", useSignUp())
+
   const [password, setPassword] = useState("")
   const [formError, setFormError] = useState<string | null>(null)
   const [pendingVerification, setPendingVerification] = useState(false)
   const [code, setCode] = useState("")
   const score = strength(password)
 
-  console.log("[v0] HOOK_STATE", {
-    isLoaded,
-    hasSignUp: !!signUp,
-    hasSetActive: !!setActive,
-  })
+  const loading = fetchStatus === "fetching"
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     console.log("[v0] SUBMIT_CLICKED")
     e.preventDefault()
-    console.log("[v0] CLERK_LOADED", isLoaded)
-    if (!isLoaded) return
+    console.log("[v0] SIGNUP_OBJECT", signUp)
+    if (!signUp) return
     setFormError(null)
-    setLoading(true)
 
     const form = e.currentTarget
     const data = new FormData(form)
@@ -55,54 +53,66 @@ export function SignUpForm() {
     const [firstName, ...rest] = fullName.split(" ")
     const lastName = rest.join(" ")
 
-    try {
-      console.log("[v0] SIGNUP_CREATE_START")
-      await signUp.create({
-        emailAddress: email,
-        password: pw,
-        firstName: firstName || undefined,
-        lastName: lastName || undefined,
-      })
-      console.log("[v0] SIGNUP_CREATE_SUCCESS")
-      console.log("[v0] PREPARE_EMAIL_VERIFICATION")
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" })
-      console.log("[v0] PREPARE_EMAIL_VERIFICATION_SUCCESS")
-      setPendingVerification(true)
-    } catch (err) {
-      console.error("[v0] SIGNUP_ERROR", err)
-      setFormError(
-        isClerkAPIResponseError(err)
-          ? (err.errors[0]?.longMessage ?? err.errors[0]?.message ?? "Something went wrong. Please try again.")
-          : "Something went wrong. Please try again.",
-      )
-    } finally {
-      setLoading(false)
+    console.log("[v0] SIGNUP_PASSWORD_START")
+    // v6 method: signUp.password() — creates account + sends verification
+    const { error: createError } = await signUp.password({
+      emailAddress: email,
+      password: pw,
+      firstName: firstName || undefined,
+      lastName: lastName || undefined,
+    })
+
+    if (createError) {
+      console.error("[v0] SIGNUP_PASSWORD_ERROR", createError)
+      setFormError(createError.longMessage ?? createError.message ?? "Something went wrong. Please try again.")
+      return
     }
+
+    console.log("[v0] SIGNUP_PASSWORD_SUCCESS")
+    console.log("[v0] SEND_EMAIL_CODE_START")
+
+    // v6: verifications.sendEmailCode() — triggers the email verification code
+    const { error: verifyError } = await signUp.verifications.sendEmailCode()
+
+    if (verifyError) {
+      console.error("[v0] SEND_EMAIL_CODE_ERROR", verifyError)
+      setFormError(verifyError.longMessage ?? verifyError.message ?? "Failed to send verification code.")
+      return
+    }
+
+    console.log("[v0] SEND_EMAIL_CODE_SUCCESS")
+    setPendingVerification(true)
   }
 
   async function onVerify(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (!isLoaded) return
+    if (!signUp) return
     setFormError(null)
-    setLoading(true)
 
-    try {
-      const result = await signUp.attemptEmailAddressVerification({ code })
-      if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId })
-        router.push("/dashboard")
-      } else {
-        setFormError("Verification could not be completed. Please try again.")
-      }
-    } catch (err) {
-      setFormError(
-        isClerkAPIResponseError(err)
-          ? (err.errors[0]?.longMessage ?? err.errors[0]?.message ?? "Invalid verification code.")
-          : "Invalid verification code.",
-      )
-    } finally {
-      setLoading(false)
+    console.log("[v0] VERIFY_EMAIL_CODE_START")
+    // v6: verifications.verifyEmailCode() — attempts the code
+    const { error: codeError } = await signUp.verifications.verifyEmailCode({ code })
+
+    if (codeError) {
+      console.error("[v0] VERIFY_EMAIL_CODE_ERROR", codeError)
+      setFormError(codeError.longMessage ?? codeError.message ?? "Invalid verification code.")
+      return
     }
+
+    console.log("[v0] VERIFY_EMAIL_CODE_SUCCESS")
+    console.log("[v0] FINALIZE_START")
+
+    // v6: finalize() replaces setActive({ session }) — activates the new session
+    const { error: finalizeError } = await signUp.finalize()
+
+    if (finalizeError) {
+      console.error("[v0] FINALIZE_ERROR", finalizeError)
+      setFormError(finalizeError.longMessage ?? finalizeError.message ?? "Could not complete sign-up.")
+      return
+    }
+
+    console.log("[v0] FINALIZE_SUCCESS")
+    router.push("/dashboard")
   }
 
   if (pendingVerification) {
@@ -190,9 +200,8 @@ export function SignUpForm() {
           </FieldLabel>
         </Field>
         {formError ? <FieldError>{formError}</FieldError> : null}
-        {/* Clerk bot-protection widget renders into this element when required */}
         <div id="clerk-captcha" />
-        <Button type="submit" className="w-full" disabled={loading}>
+        <Button type="submit" className="w-full" disabled={loading || !signUp}>
           {loading ? <Spinner data-icon="inline-start" /> : null}
           Create account
         </Button>
