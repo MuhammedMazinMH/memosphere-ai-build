@@ -79,12 +79,34 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ settings: updated })
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Unknown error'
-    console.error('[api/settings] PUT failed for userId', userId, error)
+    // TEMPORARY DIAGNOSTIC: surface the exact backend error to the client so the
+    // user can read the precise DynamoDB exception (name, message, AWS status).
+    const err = error as {
+      name?: string
+      message?: string
+      $metadata?: { httpStatusCode?: number }
+      __type?: string
+    }
+    const awsStatus = err?.$metadata?.httpStatusCode
+    // AWS SDK v3 exposes the exception type on `name` (e.g. ResourceNotFoundException).
+    const errorName = err?.name ?? err?.__type ?? 'Error'
+    const errorMessage = err?.message ?? 'Unknown error'
+
+    console.error('[api/settings] PUT failed for userId', userId, {
+      name: errorName,
+      message: errorMessage,
+      awsStatus,
+    })
+
     return NextResponse.json(
-      { error: 'Could not save settings', detail: message },
-      { status: 500 },
+      {
+        error: 'Could not save settings',
+        name: errorName,
+        message: errorMessage,
+        awsStatus: awsStatus ?? null,
+      },
+      // Echo the AWS HTTP status when present, otherwise 500.
+      { status: awsStatus ?? 500 },
     )
   }
 }

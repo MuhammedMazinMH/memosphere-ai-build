@@ -39,13 +39,31 @@ export function NotificationsTab() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ notifications: next }),
       })
-      if (!res.ok) throw new Error()
+      if (!res.ok) {
+        // TEMPORARY DIAGNOSTIC: show the exact backend error in the toast.
+        const body = (await res.json().catch(() => ({}))) as {
+          name?: string
+          message?: string
+          awsStatus?: number | null
+        }
+        const status = body.awsStatus ?? res.status
+        const name = body.name ?? "Error"
+        const message = body.message ?? res.statusText
+        const full = `${status} ${name}: ${message}`
+        console.error("[v0] settings PUT failed:", full, body)
+        setPrefs(prefs) // revert
+        toast.error(full, { duration: 15000 })
+        return
+      }
       const json = (await res.json()) as { settings: UserSettings }
       await mutate(json, { revalidate: false })
       toast.success("Preferences saved")
-    } catch {
+    } catch (err) {
+      // Network/parse-level failure (no HTTP response).
+      const message = err instanceof Error ? err.message : "Network error"
+      console.error("[v0] settings PUT threw:", err)
       setPrefs(prefs) // revert
-      toast.error("Could not save preferences")
+      toast.error(`Request failed: ${message}`, { duration: 15000 })
     }
   }
 
