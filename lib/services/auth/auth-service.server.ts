@@ -14,7 +14,6 @@
 import 'server-only'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { features } from '@/config/env'
-import { userRepository } from '@/db/repositories/user-repository'
 import type { User } from '@/types'
 
 /** The shape of a user resolved from the active Clerk session. */
@@ -25,6 +24,9 @@ export interface ClerkSessionUser {
   fullName: string
   emailAddress: string
   imageUrl: string
+  plan: string
+  streak: number
+  goal: string
 }
 
 /** Derives uppercase initials (max 2) from a display name or email. */
@@ -55,6 +57,8 @@ async function resolveClerkUser(): Promise<ClerkSessionUser | null> {
     u?.emailAddresses?.[0]?.emailAddress ??
     ''
 
+  const metadata = (u?.publicMetadata ?? {}) as Record<string, unknown>
+
   const clerkUser: ClerkSessionUser = {
     id: userId,
     firstName,
@@ -62,6 +66,9 @@ async function resolveClerkUser(): Promise<ClerkSessionUser | null> {
     fullName: [firstName, lastName].filter(Boolean).join(' ') || (u?.username ?? ''),
     emailAddress,
     imageUrl: u?.imageUrl ?? '',
+    plan: String(metadata.plan ?? ''),
+    streak: Number(metadata.streak ?? 0),
+    goal: String(metadata.goal ?? ''),
   }
 
   console.log('[v0] CLERK_USER', clerkUser)
@@ -79,27 +86,24 @@ export const authService = {
 
   /**
    * Returns the currently authenticated user mapped to the app `User` type.
-   * Identity comes from Clerk; app-specific stats (plan/streak/goal) come from
-   * the seeded profile. Falls back to the seeded user when unauthenticated.
+   * ALL fields are derived from the active Clerk session — there is no seeded
+   * mock identity anywhere in this path. App-specific stats (plan/streak/goal)
+   * are read from Clerk public metadata, defaulting to neutral values.
+   * Returns a neutral empty user when unauthenticated.
    */
   async getCurrentUser(): Promise<User> {
     const clerk = await resolveClerkUser()
-    // App-specific stats (plan/streak/goal) come from the seed — Clerk does not
-    // store these. IDENTITY (name/email/initials/id) must always come from
-    // Clerk and must never fall back to the seeded "Aarav Sharma" profile.
-    const seed = userRepository.getCurrent()
 
     if (!clerk) {
-      // Unauthenticated (or Clerk unavailable): return neutral identity so the
-      // seeded mock user is never displayed.
+      // Unauthenticated (or Clerk unavailable): neutral identity, never mock.
       return {
         id: '',
         name: '',
         email: '',
         initials: 'U',
-        plan: seed.plan,
-        streak: seed.streak,
-        goal: seed.goal,
+        plan: '',
+        streak: 0,
+        goal: '',
       }
     }
 
@@ -109,9 +113,9 @@ export const authService = {
       name,
       email: clerk.emailAddress,
       initials: deriveInitials(name),
-      plan: seed.plan,
-      streak: seed.streak,
-      goal: seed.goal,
+      plan: clerk.plan,
+      streak: clerk.streak,
+      goal: clerk.goal,
     }
   },
 

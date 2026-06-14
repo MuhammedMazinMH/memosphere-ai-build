@@ -4,21 +4,54 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useSignIn } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Field, FieldGroup, FieldLabel, FieldDescription } from "@/components/ui/field"
+import { Field, FieldGroup, FieldLabel, FieldError } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { Eye, EyeOff } from "lucide-react"
 
 export function SignInForm() {
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
+  // v6 Signal API: returns { signIn, errors, fetchStatus }
+  const { signIn, fetchStatus } = useSignIn()
   const [showPassword, setShowPassword] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
 
-  function onSubmit(e: React.FormEvent) {
+  const loading = fetchStatus === "fetching"
+
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setLoading(true)
-    setTimeout(() => router.push("/dashboard"), 800)
+    if (!signIn) return
+    setFormError(null)
+
+    const data = new FormData(e.currentTarget)
+    const email = String(data.get("email") ?? "").trim()
+    const password = String(data.get("password") ?? "")
+
+    // v6 method: signIn.password() — submits the identifier + password
+    const { error: passwordError } = await signIn.password({
+      identifier: email,
+      password,
+    })
+
+    if (passwordError) {
+      setFormError(
+        passwordError.longMessage ?? passwordError.message ?? "Invalid email or password.",
+      )
+      return
+    }
+
+    // v6: finalize() activates the new session
+    const { error: finalizeError } = await signIn.finalize({
+      navigate: () => router.push("/dashboard"),
+    })
+
+    if (finalizeError) {
+      setFormError(
+        finalizeError.longMessage ?? finalizeError.message ?? "Could not complete sign-in.",
+      )
+    }
   }
 
   return (
@@ -32,7 +65,6 @@ export function SignInForm() {
             type="email"
             autoComplete="email"
             placeholder="you@university.edu"
-            defaultValue="alex.morgan@university.edu"
             required
           />
         </Field>
@@ -53,7 +85,6 @@ export function SignInForm() {
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               placeholder="Enter your password"
-              defaultValue="password123"
               required
             />
             <button
@@ -70,7 +101,8 @@ export function SignInForm() {
             </button>
           </div>
         </Field>
-        <Button type="submit" className="w-full" disabled={loading}>
+        {formError ? <FieldError>{formError}</FieldError> : null}
+        <Button type="submit" className="w-full" disabled={loading || !signIn}>
           {loading ? <Spinner data-icon="inline-start" /> : null}
           Sign in
         </Button>

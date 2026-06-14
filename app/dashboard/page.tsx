@@ -25,9 +25,15 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic"
 
 export default async function DashboardPage() {
-  const user = await authService.getCurrentUser()
-  console.log("[v0] DASHBOARD_USER", user)
+  const clerkUser = await authService.getClerkUser()
+  console.log("CLERK USER", {
+    id: clerkUser?.id,
+    firstName: clerkUser?.firstName,
+    lastName: clerkUser?.lastName,
+    email: clerkUser?.emailAddress,
+  })
 
+  const user = await authService.getCurrentUser()
   const firstName = user.name.split(" ")[0]
 
   return (

@@ -18,7 +18,6 @@ import {
   FieldLabel,
   FieldDescription,
 } from "@/components/ui/field"
-import { user as seedProfile } from "@/lib/mock-data"
 import { PageHeader } from "@/components/dashboard/page-header"
 
 const notifications = [
@@ -34,28 +33,37 @@ export function ProfileView() {
     Object.fromEntries(notifications.map((n) => [n.id, n.on])),
   )
 
+  console.log("CLERK USER", {
+    id: clerkUser?.id,
+    firstName: clerkUser?.firstName,
+    lastName: clerkUser?.lastName,
+    email: clerkUser?.primaryEmailAddress?.emailAddress,
+  })
+
   // Identity (name/email/initials) comes ONLY from the authenticated Clerk
-  // session — never from the seeded mock profile. App-specific stats
-  // (streak/goal) are the only fields still sourced from the seed.
+  // session — never from any seeded mock profile.
   const name =
     clerkUser?.fullName || clerkUser?.primaryEmailAddress?.emailAddress || ""
   const initials =
-    (name
+    name
       .split(/\s+/)
       .map((part) => part[0])
       .filter(Boolean)
       .join("")
       .slice(0, 2)
-      .toUpperCase()) || "U"
+      .toUpperCase() || "U"
+
+  // App-specific stats are read from Clerk's public metadata when present.
+  const streak = Number(clerkUser?.publicMetadata?.streak ?? 0)
+  const goal = String(clerkUser?.publicMetadata?.goal ?? "")
 
   const user = {
     name,
     email: clerkUser?.primaryEmailAddress?.emailAddress ?? "",
     initials,
-    streak: seedProfile.streak,
-    goal: seedProfile.goal,
+    streak,
+    goal,
   }
-  console.log("[v0] PROFILE_USER", user)
 
   return (
     <Tabs defaultValue="profile" className="gap-6">

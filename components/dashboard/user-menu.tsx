@@ -23,26 +23,27 @@ import {
 export function UserMenu() {
   const router = useRouter()
   const { isMobile } = useSidebar()
-  const { user: clerkUser, isLoaded } = useUser()
+  const { user } = useUser()
   const { signOut } = useClerk()
 
-  // Identity comes exclusively from the Clerk session — no seeded mock fallback.
-  const name =
-    clerkUser?.fullName ||
-    clerkUser?.primaryEmailAddress?.emailAddress ||
-    (isLoaded ? "Account" : "")
-  const email = clerkUser?.primaryEmailAddress?.emailAddress ?? ""
+  console.log("CLERK USER", {
+    id: user?.id,
+    firstName: user?.firstName,
+    lastName: user?.lastName,
+    email: user?.primaryEmailAddress?.emailAddress,
+  })
+
+  // Identity comes exclusively from the active Clerk session.
+  const name = user?.fullName || user?.primaryEmailAddress?.emailAddress || ""
+  const email = user?.primaryEmailAddress?.emailAddress ?? ""
   const initials =
-    (name
+    name
       .split(/\s+/)
       .map((part) => part[0])
       .filter(Boolean)
       .join("")
       .slice(0, 2)
-      .toUpperCase()) || "U"
-
-  const user = { name, email, initials }
-  console.log("[v0] USER_MENU_USER", user)
+      .toUpperCase() || "U"
 
   async function handleLogout() {
     await signOut()
@@ -61,13 +62,13 @@ export function UserMenu() {
               >
                 <Avatar className="size-8 rounded-lg">
                   <AvatarFallback className="rounded-lg bg-primary text-primary-foreground text-xs">
-                    {user.initials}
+                    {initials}
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
+                  <span className="truncate font-medium">{name}</span>
                   <span className="truncate text-xs text-muted-foreground">
-                    {user.email}
+                    {email}
                   </span>
                 </div>
                 <ChevronsUpDown className="ml-auto size-4" />
@@ -85,13 +86,13 @@ export function UserMenu() {
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                   <Avatar className="size-8 rounded-lg">
                     <AvatarFallback className="rounded-lg bg-primary text-primary-foreground text-xs">
-                      {user.initials}
+                      {initials}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">{user.name}</span>
+                    <span className="truncate font-medium">{name}</span>
                     <span className="truncate text-xs text-muted-foreground">
-                      {user.email}
+                      {email}
                     </span>
                   </div>
                 </div>
