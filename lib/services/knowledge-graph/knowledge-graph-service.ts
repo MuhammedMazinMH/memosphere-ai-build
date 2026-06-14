@@ -19,6 +19,27 @@ export const knowledgeGraphService = {
   getJourney(): string[] {
     return conceptRepository.findJourney()
   },
+
+  /** Live read of all concepts from DynamoDB with mock fallback. */
+  async listConcepts(): Promise<Concept[]> {
+    try {
+      return await conceptRepository.findAllConceptsFromDb()
+    } catch (error) {
+      console.error('[v0] knowledgeGraphService.listConcepts DynamoDB error:', error)
+      return conceptRepository.findAllConcepts()
+    }
+  },
+
+  /** Live read of all graph connections from DynamoDB with mock fallback. */
+  async listConnections(): Promise<ConceptConnection[]> {
+    try {
+      return await conceptRepository.findAllConnectionsFromDb()
+    } catch (error) {
+      console.error('[v0] knowledgeGraphService.listConnections DynamoDB error:', error)
+      return conceptRepository.findAllConnections()
+    }
+  },
+
   async generate(userId: string): Promise<KnowledgeGraph> {
     return getAIProvider().generateKnowledgeGraph(userId)
   },

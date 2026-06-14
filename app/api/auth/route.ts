@@ -10,6 +10,6 @@ import { authService } from '@/lib/services/auth/auth-service'
 import { ok } from '@/lib/api/response'
 
 export async function GET() {
-  const user = authService.getCurrentUser()
+  const user = await authService.getCurrentUserLive()
   return ok({ user })
 }

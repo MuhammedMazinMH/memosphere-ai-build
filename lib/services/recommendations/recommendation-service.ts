@@ -15,6 +15,17 @@ export const recommendationService = {
   getLearningIntelligence(): LearningIntelligence {
     return analyticsRepository.learningIntelligence()
   },
+
+  /** Live read of a user's recommendations from DynamoDB with mock fallback. */
+  async listRecommendations(userId: string): Promise<Recommendation> {
+    try {
+      return await analyticsRepository.recommendationsFromDb(userId)
+    } catch (error) {
+      console.error('[v0] recommendationService.listRecommendations DynamoDB error:', error)
+      return analyticsRepository.recommendations()
+    }
+  },
+
   async generate(userId: string): Promise<Recommendation> {
     return getAIProvider().generateRecommendations(userId)
   },

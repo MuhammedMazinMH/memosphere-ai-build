@@ -6,8 +6,10 @@
  *   active AI provider via examReadinessService; reads are synchronous today.
  */
 import { examReadinessService } from '@/lib/services'
+import { authService } from '@/lib/services/auth/auth-service'
 import { ok } from '@/lib/api/response'
 
 export async function GET() {
-  return ok(examReadinessService.getReadiness())
+  const userId = authService.getCurrentUser().id ?? ''
+  return ok(await examReadinessService.listReadiness(userId))
 }

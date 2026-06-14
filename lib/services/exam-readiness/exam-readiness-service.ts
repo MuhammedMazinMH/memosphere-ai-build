@@ -12,6 +12,17 @@ export const examReadinessService = {
   getReadiness(): ExamReadiness[] {
     return analyticsRepository.examReadiness()
   },
+
+  /** Live read of a user's exam readiness from DynamoDB with mock fallback. */
+  async listReadiness(userId: string): Promise<ExamReadiness[]> {
+    try {
+      return await analyticsRepository.examReadinessFromDb(userId)
+    } catch (error) {
+      console.error('[v0] examReadinessService.listReadiness DynamoDB error:', error)
+      return analyticsRepository.examReadiness()
+    }
+  },
+
   async calculate(userId: string): Promise<ExamReadiness[]> {
     return getAIProvider().calculateExamReadiness(userId)
   },

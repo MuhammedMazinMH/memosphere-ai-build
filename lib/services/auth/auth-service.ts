@@ -25,6 +25,24 @@ export const authService = {
     return userRepository.getCurrent()
   },
 
+  /**
+   * Live read of the current user's profile from DynamoDB with mock fallback.
+   * Resolves the current user id (demo: seeded user) then loads the profile via
+   * the async DynamoDB user lookup. Any error is logged and the seeded user is
+   * returned so the UI never breaks.
+   */
+  async getCurrentUserLive(): Promise<User> {
+    const current = userRepository.getCurrent()
+    if (!current.id) return current
+    try {
+      const user = await userRepository.findById(current.id)
+      return user ?? current
+    } catch (error) {
+      console.error('[v0] authService.getCurrentUserLive DynamoDB error:', error)
+      return current
+    }
+  },
+
   /** Whether Clerk authentication is configured. */
   isConfigured(): boolean {
     return features.auth()

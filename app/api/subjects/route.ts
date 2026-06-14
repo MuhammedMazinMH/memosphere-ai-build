@@ -10,7 +10,7 @@ import { subjectSchema, validate } from '@/lib/validations'
 import { ok, badRequest } from '@/lib/api/response'
 
 export async function GET() {
-  return ok(subjectService.getSubjects())
+  return ok(await subjectService.listSubjects())
 }
 
 export async function POST(request: Request) {

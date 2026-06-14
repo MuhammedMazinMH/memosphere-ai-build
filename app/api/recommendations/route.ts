@@ -6,8 +6,10 @@
  *   AI provider via recommendationService; reads are synchronous today.
  */
 import { recommendationService } from '@/lib/services'
+import { authService } from '@/lib/services/auth/auth-service'
 import { ok } from '@/lib/api/response'
 
 export async function GET() {
-  return ok(recommendationService.getRecommendations())
+  const userId = authService.getCurrentUser().id ?? ''
+  return ok(await recommendationService.listRecommendations(userId))
 }

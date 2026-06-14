@@ -9,5 +9,5 @@ import { knowledgeGraphService } from '@/lib/services'
 import { ok } from '@/lib/api/response'
 
 export async function GET() {
-  return ok(knowledgeGraphService.getConcepts())
+  return ok(await knowledgeGraphService.listConcepts())
 }

@@ -10,7 +10,7 @@ import { documentSchema, validate } from '@/lib/validations'
 import { ok, badRequest } from '@/lib/api/response'
 
 export async function GET() {
-  return ok(documentService.getDocuments())
+  return ok(await documentService.listDocuments())
 }
 
 export async function POST(request: Request) {
