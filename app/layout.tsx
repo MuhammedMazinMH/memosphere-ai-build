@@ -1,4 +1,5 @@
 import type React from 'react'
+import { ClerkProvider } from '@clerk/nextjs'
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
@@ -56,23 +57,25 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} bg-background`}
-      suppressHydrationWarning
-    >
-      <body className="font-sans antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-          <Toaster richColors position="top-center" />
-        </ThemeProvider>
-        {process.env.NODE_ENV === 'production' && <Analytics />}
-      </body>
-    </html>
+    <ClerkProvider>
+      <html
+        lang="en"
+        className={`${geistSans.variable} ${geistMono.variable} bg-background`}
+        suppressHydrationWarning
+      >
+        <body className="font-sans antialiased">
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+            <Toaster richColors position="top-center" />
+          </ThemeProvider>
+          {process.env.NODE_ENV === 'production' && <Analytics />}
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }
