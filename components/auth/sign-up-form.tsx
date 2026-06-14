@@ -34,7 +34,9 @@ export function SignUpForm() {
   const score = strength(password)
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    console.log("[v0] SUBMIT_CLICKED")
     e.preventDefault()
+    console.log("[v0] CLERK_LOADED", isLoaded)
     if (!isLoaded) return
     setFormError(null)
     setLoading(true)
@@ -48,15 +50,20 @@ export function SignUpForm() {
     const lastName = rest.join(" ")
 
     try {
+      console.log("[v0] SIGNUP_CREATE_START")
       await signUp.create({
         emailAddress: email,
         password: pw,
         firstName: firstName || undefined,
         lastName: lastName || undefined,
       })
+      console.log("[v0] SIGNUP_CREATE_SUCCESS")
+      console.log("[v0] PREPARE_EMAIL_VERIFICATION")
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" })
+      console.log("[v0] PREPARE_EMAIL_VERIFICATION_SUCCESS")
       setPendingVerification(true)
     } catch (err) {
+      console.error("[v0] SIGNUP_ERROR", err)
       setFormError(
         isClerkAPIResponseError(err)
           ? (err.errors[0]?.longMessage ?? err.errors[0]?.message ?? "Something went wrong. Please try again.")
