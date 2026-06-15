@@ -100,7 +100,7 @@ export function QuizGeneratorView() {
           <CardContent className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
               <span className="text-sm font-medium">Subject</span>
-              <Select value={subject} onValueChange={setSubject}>
+              <Select value={subject} onValueChange={(v) => setSubject(v ?? subjects[0].id)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -133,7 +133,7 @@ export function QuizGeneratorView() {
               </div>
               <div className="flex flex-col gap-2">
                 <span className="text-sm font-medium">Difficulty</span>
-                <Select value={difficulty} onValueChange={setDifficulty}>
+                <Select value={difficulty} onValueChange={(v) => setDifficulty(v ?? "Mixed")}>
                   <SelectTrigger aria-label="Difficulty">
                     <SelectValue />
                   </SelectTrigger>
@@ -150,7 +150,7 @@ export function QuizGeneratorView() {
               </div>
               <div className="flex flex-col gap-2">
                 <span className="text-sm font-medium">Format</span>
-                <Select value={format} onValueChange={setFormat}>
+                <Select value={format} onValueChange={(v) => setFormat(v ?? "Multiple choice")}>
                   <SelectTrigger aria-label="Format">
                     <SelectValue />
                   </SelectTrigger>

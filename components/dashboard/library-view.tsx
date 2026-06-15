@@ -90,7 +90,7 @@ export function LibraryView() {
           />
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Select value={subject} onValueChange={setSubject}>
+          <Select value={subject} onValueChange={(v) => setSubject(v ?? "all")}>
             <SelectTrigger className="w-44">
               <SelectValue placeholder="Subject" />
             </SelectTrigger>

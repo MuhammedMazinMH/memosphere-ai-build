@@ -63,7 +63,7 @@ export function Testimonials() {
     return () => clearInterval(timer)
   }, [isAutoPlay])
 
-  const getCardIndex = (offset) => (current + offset + length) % length
+  const getCardIndex = (offset: number) => (current + offset + length) % length
 
   return (
     <section id="testimonials" className="scroll-mt-16 border-y border-border bg-background py-16 sm:py-24">

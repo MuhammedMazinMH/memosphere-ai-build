@@ -7,8 +7,7 @@
  */
 import { NextResponse } from 'next/server'
 import { clerkClient } from '@clerk/nextjs/server'
-import { isAdmin } from '@/lib/auth/roles'
-import { normalizeRole } from '@/lib/auth/roles'
+import { isAdmin, normalizeRole } from '@/lib/auth/roles'
 
 export async function GET(request: Request) {
   if (!(await isAdmin())) {

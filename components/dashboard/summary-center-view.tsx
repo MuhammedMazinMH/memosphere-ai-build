@@ -84,7 +84,7 @@ export function SummaryCenterView() {
             <CardDescription>Choose a document to summarize</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <Select value={selectedDoc} onValueChange={setSelectedDoc}>
+            <Select value={selectedDoc} onValueChange={(v) => v && setSelectedDoc(v)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>

@@ -34,36 +34,22 @@ export function ForgotPasswordForm() {
     const data = new FormData(e.currentTarget)
     const email = String(data.get("email") ?? "").trim()
 
-    console.log("[v0] reset: request started for", email)
-
     // Create the sign-in attempt with the identifier, then send the reset code.
     const createResult = await signIn.create({ identifier: email })
-    console.log("[v0] reset: signIn.create ->", {
-      status: signIn.status,
-      error: createResult.error,
-    })
     if (createResult.error) {
       const err = createResult.error
-      console.log("[v0] reset: create error", err.code, err.message)
       setFormError(err.longMessage ?? err.message ?? "Could not start password reset.")
       return
     }
 
-    console.log("[v0] reset: calling resetPasswordEmailCode.sendCode()")
     const sendResult = await signIn.resetPasswordEmailCode.sendCode()
-    console.log("[v0] reset: sendCode ->", {
-      status: signIn.status,
-      error: sendResult.error,
-    })
     if (sendResult.error) {
       const err = sendResult.error
-      console.log("[v0] reset: sendCode error", err.code, err.message)
       setFormError(err.longMessage ?? err.message ?? "Could not send a reset email.")
       return
     }
 
     // Only now do we advance to the "enter code + new password" step.
-    console.log("[v0] reset: code sent successfully")
     setStep("reset")
   }
 
@@ -83,34 +69,21 @@ export function ForgotPasswordForm() {
       return
     }
 
-    console.log("[v0] reset: verifying code")
     const verifyResult = await signIn.resetPasswordEmailCode.verifyCode({ code })
-    console.log("[v0] reset: verifyCode ->", {
-      status: signIn.status,
-      error: verifyResult.error,
-    })
     if (verifyResult.error) {
       const err = verifyResult.error
-      console.log("[v0] reset: verifyCode error", err.code, err.message)
       setFormError(err.longMessage ?? err.message ?? "Invalid or expired code.")
       return
     }
 
-    console.log("[v0] reset: submitting new password")
     const submitResult = await signIn.resetPasswordEmailCode.submitPassword({ password })
-    console.log("[v0] reset: submitPassword ->", {
-      status: signIn.status,
-      error: submitResult.error,
-    })
     if (submitResult.error) {
       const err = submitResult.error
-      console.log("[v0] reset: submitPassword error", err.code, err.message)
       setFormError(err.longMessage ?? err.message ?? "Could not update your password.")
       return
     }
 
     if (signIn.status === "complete" && signIn.createdSessionId) {
-      console.log("[v0] reset: complete, finalizing session")
       const { error } = await signIn.finalize({
         navigate: () => router.push("/dashboard"),
       })
@@ -121,7 +94,6 @@ export function ForgotPasswordForm() {
     }
 
     // Password changed but a second factor is required to create a session.
-    console.log("[v0] reset: password updated, status", signIn.status)
     setFormError(null)
     router.push("/sign-in")
   }
