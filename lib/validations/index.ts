@@ -33,11 +33,22 @@ export const subjectSchema = z.object({
 })
 export type SubjectInput = z.infer<typeof subjectSchema>
 
-/** Documents (metadata only — bytes live in S3) */
+/**
+ * Documents (metadata only — bytes live in S3).
+ *
+ * Note: `userId`, `uploadedAt` and `s3Key` are derived server-side (from the
+ * authenticated session and the S3 write) and are intentionally NOT accepted
+ * from client input.
+ */
 export const documentSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
   type: fileTypeSchema,
   subjectId: z.string().min(1, 'A subject is required'),
+  sizeBytes: z.number().int().positive().optional(),
+  status: z
+    .enum(['uploaded', 'processing', 'ready', 'failed'])
+    .optional()
+    .default('uploaded'),
 })
 export type DocumentInput = z.infer<typeof documentSchema>
 

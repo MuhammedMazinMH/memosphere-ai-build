@@ -27,6 +27,16 @@ export type TableName =
   | 'examReadiness'
   | 'summaries'
 
+/** Global Secondary Index key schema. */
+export interface GsiSchema {
+  /** Index name (must match the index created in DynamoDB). */
+  indexName: string
+  /** Partition key attribute name for the index. */
+  partitionKey: string
+  /** Optional sort key attribute name for the index. */
+  sortKey?: string
+}
+
 /** Key schema for a DynamoDB table. */
 export interface TableSchema {
   /** Physical (unprefixed) base name. */
@@ -35,6 +45,8 @@ export interface TableSchema {
   partitionKey: string
   /** Optional sort key attribute name. */
   sortKey?: string
+  /** Optional Global Secondary Indexes. */
+  gsis?: GsiSchema[]
 }
 
 /** Canonical schema for every table in the application. */
@@ -49,7 +61,13 @@ export const TABLES: Record<TableName, TableSchema> = {
     sortKey: 'id',
   },
   subjects: { base: 'subjects', partitionKey: 'id' },
-  documents: { base: 'documents', partitionKey: 'id' },
+  // Documents are keyed by `id`. The `byUser` GSI enables efficient per-user
+  // queries (partition `userId`, sorted newest-first by numeric `uploadedAt`).
+  documents: {
+    base: 'documents',
+    partitionKey: 'id',
+    gsis: [{ indexName: 'byUser', partitionKey: 'userId', sortKey: 'uploadedAt' }],
+  },
   concepts: { base: 'concepts', partitionKey: 'id' },
   knowledgeGraphNodes: { base: 'knowledge_graph_nodes', partitionKey: 'id' },
   knowledgeGraphEdges: {
@@ -90,4 +108,9 @@ export function partitionKeyOf(name: TableName): string {
 /** Returns the sort key attribute for the given logical table (if any). */
 export function sortKeyOf(name: TableName): string | undefined {
   return TABLES[name].sortKey
+}
+
+/** Returns the Global Secondary Indexes for the given logical table (if any). */
+export function gsisOf(name: TableName): GsiSchema[] {
+  return TABLES[name].gsis ?? []
 }

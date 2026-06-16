@@ -27,16 +27,22 @@ export type Subject = {
 
 export type KnowledgeItem = {
   id: string
+  userId: string
   title: string
   type: FileType
   subjectId: string
   subject: string
   size: string
-  uploadedAt: string
+  uploadedAt: number
   summarized: boolean
   concepts: number
   excerpt: string
 }
+
+/** Epoch-ms offsets so demo timestamps stay relative to "now". */
+const HOUR = 60 * 60 * 1000
+const DAY = 24 * HOUR
+const DEMO_USER_ID = 'demo-user'
 
 export const subjects: Subject[] = [
   {
@@ -158,12 +164,13 @@ export const subjects: Subject[] = [
 export const knowledgeItems: KnowledgeItem[] = [
   {
     id: 'k1',
+    userId: DEMO_USER_ID,
     title: 'Gradient Descent & Optimization.pdf',
     type: 'pdf',
     subjectId: 'ml',
     subject: 'Machine Learning',
     size: '2.4 MB',
-    uploadedAt: '2 hours ago',
+    uploadedAt: Date.now() - 2 * HOUR,
     summarized: true,
     concepts: 14,
     excerpt:
@@ -171,12 +178,13 @@ export const knowledgeItems: KnowledgeItem[] = [
   },
   {
     id: 'k2',
+    userId: DEMO_USER_ID,
     title: 'Spark Architecture Deep Dive.pptx',
     type: 'presentation',
     subjectId: 'bda',
     subject: 'Big Data Analytics',
     size: '8.1 MB',
-    uploadedAt: 'Yesterday',
+    uploadedAt: Date.now() - 1 * DAY,
     summarized: true,
     concepts: 11,
     excerpt:
@@ -184,12 +192,13 @@ export const knowledgeItems: KnowledgeItem[] = [
   },
   {
     id: 'k3',
+    userId: DEMO_USER_ID,
     title: 'A* Search Lecture Notes',
     type: 'note',
     subjectId: 'ai',
     subject: 'Artificial Intelligence',
     size: '320 KB',
-    uploadedAt: '2 days ago',
+    uploadedAt: Date.now() - 2 * DAY,
     summarized: true,
     concepts: 8,
     excerpt:
@@ -197,72 +206,78 @@ export const knowledgeItems: KnowledgeItem[] = [
   },
   {
     id: 'k4',
+    userId: DEMO_USER_ID,
     title: 'Whiteboard - Red-Black Trees.png',
     type: 'image',
     subjectId: 'ds',
     subject: 'Data Structures',
     size: '1.2 MB',
-    uploadedAt: '3 days ago',
+    uploadedAt: Date.now() - 3 * DAY,
     summarized: false,
     concepts: 0,
     excerpt: 'Hand-drawn rotations and recoloring rules from the tutorial session.',
   },
   {
     id: 'k5',
+    userId: DEMO_USER_ID,
     title: 'Hypothesis Testing Cheat Sheet.pdf',
     type: 'pdf',
     subjectId: 'stats',
     subject: 'Statistics',
     size: '640 KB',
-    uploadedAt: '4 days ago',
+    uploadedAt: Date.now() - 4 * DAY,
     summarized: true,
     concepts: 12,
     excerpt: 'p-values, type I/II errors, t-tests, chi-square, and ANOVA in one reference.',
   },
   {
     id: 'k6',
+    userId: DEMO_USER_ID,
     title: 'Normalization Forms Explained',
     type: 'note',
     subjectId: 'dbms',
     subject: 'Database Systems',
     size: '210 KB',
-    uploadedAt: '5 days ago',
+    uploadedAt: Date.now() - 5 * DAY,
     summarized: true,
     concepts: 9,
     excerpt: '1NF through BCNF with worked examples and decomposition strategies.',
   },
   {
     id: 'k7',
+    userId: DEMO_USER_ID,
     title: 'Neural Networks Crash Course.mp4',
     type: 'video',
     subjectId: 'ml',
     subject: 'Machine Learning',
     size: '124 MB',
-    uploadedAt: '1 week ago',
+    uploadedAt: Date.now() - 7 * DAY,
     summarized: true,
     concepts: 16,
     excerpt: 'Backpropagation, activation functions, and regularization in a 45 min recording.',
   },
   {
     id: 'k8',
+    userId: DEMO_USER_ID,
     title: 'MapReduce Patterns.pptx',
     type: 'presentation',
     subjectId: 'bda',
     subject: 'Big Data Analytics',
     size: '5.6 MB',
-    uploadedAt: '1 week ago',
+    uploadedAt: Date.now() - 8 * DAY,
     summarized: false,
     concepts: 0,
     excerpt: 'Common MapReduce design patterns: summarization, filtering, and joins.',
   },
   {
     id: 'k9',
+    userId: DEMO_USER_ID,
     title: 'Bayesian Networks Notes',
     type: 'note',
     subjectId: 'ai',
     subject: 'Artificial Intelligence',
     size: '480 KB',
-    uploadedAt: '2 weeks ago',
+    uploadedAt: Date.now() - 14 * DAY,
     summarized: true,
     concepts: 13,
     excerpt: 'Conditional independence, d-separation, and inference via variable elimination.',

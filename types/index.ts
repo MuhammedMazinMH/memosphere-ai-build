@@ -59,17 +59,31 @@ export interface Subject {
  * - File bytes live in AWS S3; only metadata references are stored in the
  *   application/database layer. See lib/services/s3-service.ts.
  */
+export type DocumentStatus = 'uploaded' | 'processing' | 'ready' | 'failed'
+
 export interface Document {
   id: string
+  /** Owner (Clerk user id). Partition key of the `byUser` GSI. */
+  userId: string
   title: string
   type: FileType
   subjectId: string
   subject: string
+  /** Human-readable size for display (e.g. "2.4 MB"). */
   size: string
-  uploadedAt: string
+  /** Upload time as epoch milliseconds. Sort key of the `byUser` GSI. */
+  uploadedAt: number
   summarized: boolean
   concepts: number
   excerpt: string
+  /** S3 object key for the stored file (set by the upload write path). */
+  s3Key?: string
+  /** Numeric byte size of the stored file (set by the upload write path). */
+  sizeBytes?: number
+  /** Resolved file URL (set by the upload write path). */
+  fileUrl?: string
+  /** Processing lifecycle status. */
+  status?: DocumentStatus
 }
 
 /** Backwards-compatible alias used across the dashboard UI. */

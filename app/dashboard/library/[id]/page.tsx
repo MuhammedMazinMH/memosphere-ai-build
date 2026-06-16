@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { FileTypeIcon, fileTypeLabel } from "@/components/dashboard/file-type-icon"
 import { documentService } from "@/lib/services"
+import { formatRelativeTime } from "@/lib/utils"
 
 const knowledgeItems = documentService.getDocuments()
 
@@ -88,7 +89,7 @@ export default async function DocumentPage({
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="size-3.5" />
-                  {item.uploadedAt}
+                  {formatRelativeTime(item.uploadedAt)}
                 </span>
                 <Badge variant="outline">{fileTypeLabel(item.type)}</Badge>
                 <Badge variant="secondary">{item.subject}</Badge>

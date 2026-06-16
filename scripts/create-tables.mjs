@@ -1,11 +1,13 @@
 /**
  * DynamoDB table provisioning for the settings/notifications features.
  *
- * Creates the two tables introduced for user settings (study goal, bio,
- * notification preferences) and the notification bell. Key schema mirrors
- * db/tables.ts exactly:
+ * Creates the tables introduced for user settings (study goal, bio,
+ * notification preferences), the notification bell, and document metadata.
+ * Key schema mirrors db/tables.ts exactly:
  *   - user_settings : partition key `userId` (String)
  *   - notifications : partition key `userId` (String) + sort key `id` (String)
+ *   - documents     : partition key `id` (String) + GSI `byUser`
+ *                     (partition `userId` String, sort `uploadedAt` Number)
  *
  * Physical names use AWS_DYNAMODB_TABLE_PREFIX (default `memosphere_`), so the
  * created tables match what the app reads/writes at runtime.
@@ -68,6 +70,27 @@ const tables = [
       { AttributeName: 'id', AttributeType: 'S' },
     ],
   },
+  {
+    base: 'documents',
+    keySchema: [{ AttributeName: 'id', KeyType: 'HASH' }],
+    // Only key/index attributes need definitions. `uploadedAt` is Number (N)
+    // so the GSI sorts chronologically (epoch milliseconds).
+    attributes: [
+      { AttributeName: 'id', AttributeType: 'S' },
+      { AttributeName: 'userId', AttributeType: 'S' },
+      { AttributeName: 'uploadedAt', AttributeType: 'N' },
+    ],
+    globalSecondaryIndexes: [
+      {
+        IndexName: 'byUser',
+        KeySchema: [
+          { AttributeName: 'userId', KeyType: 'HASH' },
+          { AttributeName: 'uploadedAt', KeyType: 'RANGE' },
+        ],
+        Projection: { ProjectionType: 'ALL' },
+      },
+    ],
+  },
 ]
 
 async function exists(name) {
@@ -94,6 +117,9 @@ async function main() {
         BillingMode: 'PAY_PER_REQUEST',
         KeySchema: t.keySchema,
         AttributeDefinitions: t.attributes,
+        ...(t.globalSecondaryIndexes
+          ? { GlobalSecondaryIndexes: t.globalSecondaryIndexes }
+          : {}),
       }),
     )
     await waitUntilTableExists(

@@ -179,6 +179,33 @@ export async function queryByPartition<T>(
   return (res.Items ?? []) as T[]
 }
 
+/**
+ * Queries items via a Global Secondary Index by its partition key value.
+ * Results are returned newest-first (`ScanIndexForward: false`), which for the
+ * documents `byUser` GSI (sort key `uploadedAt`) yields the most recent first.
+ * Use this for efficient per-user lookups instead of a full-table Scan.
+ */
+export async function queryByIndex<T>(
+  table: TableName,
+  indexName: string,
+  indexPartitionKey: string,
+  partitionValue: unknown,
+): Promise<T[]> {
+  const client = await getDocClient()
+  const { QueryCommand } = await import('@aws-sdk/lib-dynamodb')
+  const res = await client.send(
+    new QueryCommand({
+      TableName: tableName(table),
+      IndexName: indexName,
+      KeyConditionExpression: '#pk = :pk',
+      ExpressionAttributeNames: { '#pk': indexPartitionKey },
+      ExpressionAttributeValues: { ':pk': partitionValue },
+      ScanIndexForward: false,
+    }),
+  )
+  return (res.Items ?? []) as T[]
+}
+
 /** Puts (creates or replaces) a single item. */
 export async function putItem<T extends Record<string, unknown>>(
   table: TableName,

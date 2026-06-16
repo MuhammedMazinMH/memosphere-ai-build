@@ -4,6 +4,7 @@ import { Download, Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import type { KnowledgeItem } from "@/types"
+import { formatRelativeTime } from "@/lib/utils"
 
 export function DocumentActions({ item }: { item: KnowledgeItem }) {
   async function share() {
@@ -38,7 +39,7 @@ export function DocumentActions({ item }: { item: KnowledgeItem }) {
       `Subject: ${item.subject}`,
       `Type: ${item.type.toUpperCase()}`,
       `Size: ${item.size}`,
-      `Uploaded: ${item.uploadedAt}`,
+      `Uploaded: ${formatRelativeTime(item.uploadedAt)}`,
       "",
       "Summary",
       item.excerpt,

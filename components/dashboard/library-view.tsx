@@ -32,7 +32,7 @@ import { FileTypeIcon, fileTypeLabel } from "@/components/dashboard/file-type-ic
 import { documentService, subjectService } from "@/lib/services"
 import type { FileType } from "@/types"
 import { Upload, FileSearch } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, formatRelativeTime } from "@/lib/utils"
 
 const knowledgeItems = documentService.getDocuments()
 const subjects = subjectService.getSubjects()
@@ -175,7 +175,7 @@ export function LibraryView() {
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>{item.size}</span>
-                    <span>{item.uploadedAt}</span>
+                    <span>{formatRelativeTime(item.uploadedAt)}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -209,7 +209,7 @@ export function LibraryView() {
                       ) : null}
                     </div>
                     <span className="hidden w-24 text-right text-xs text-muted-foreground md:block">
-                      {item.uploadedAt}
+                      {formatRelativeTime(item.uploadedAt)}
                     </span>
                   </Link>
                 </li>
