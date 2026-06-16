@@ -60,8 +60,8 @@ export function LibraryView() {
         setIsLoading(true)
         const response = await fetch("/api/documents")
         if (response.ok) {
-          const data = await response.json()
-          setDocuments(data)
+          const json = await response.json()
+          setDocuments(Array.isArray(json?.data) ? json.data : [])
         }
       } catch (error) {
         console.error('[v0] Failed to fetch documents:', error)
@@ -73,7 +73,8 @@ export function LibraryView() {
   }, [])
 
   const filtered = useMemo(() => {
-    return documents.filter((item) => {
+    const items = Array.isArray(documents) ? documents : []
+    return items.filter((item) => {
       const matchesQuery =
         item.title.toLowerCase().includes(query.toLowerCase()) ||
         item.excerpt.toLowerCase().includes(query.toLowerCase())
@@ -102,8 +103,8 @@ export function LibraryView() {
               try {
                 const response = await fetch("/api/documents")
                 if (response.ok) {
-                  const data = await response.json()
-                  setDocuments(data)
+                  const json = await response.json()
+                  setDocuments(Array.isArray(json?.data) ? json.data : [])
                 }
               } catch (error) {
                 console.error('[v0] Failed to refresh documents:', error)
