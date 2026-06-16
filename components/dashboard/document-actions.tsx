@@ -1,12 +1,14 @@
 "use client"
 
-import { Download, Share2 } from "lucide-react"
+import { useState } from "react"
+import { Download, Share2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import type { KnowledgeItem } from "@/types"
-import { formatRelativeTime } from "@/lib/utils"
 
 export function DocumentActions({ item }: { item: KnowledgeItem }) {
+  const [downloading, setDownloading] = useState(false)
+
   async function share() {
     const url = typeof window !== "undefined" ? window.location.href : ""
     const shareData = {
@@ -32,29 +34,33 @@ export function DocumentActions({ item }: { item: KnowledgeItem }) {
     }
   }
 
-  function download() {
-    const content = [
-      item.title,
-      "",
-      `Subject: ${item.subject}`,
-      `Type: ${item.type.toUpperCase()}`,
-      `Size: ${item.size}`,
-      `Uploaded: ${formatRelativeTime(item.uploadedAt)}`,
-      "",
-      "Summary",
-      item.excerpt,
-    ].join("\n")
+  async function download() {
+    setDownloading(true)
+    try {
+      // Resolve a fresh presigned URL for the real stored file.
+      const res = await fetch(`/api/documents/${item.id}/viewer-url`)
+      const json = await res.json().catch(() => ({}))
+      const url: string | undefined = json?.data?.url
+      if (!res.ok || !url) {
+        throw new Error(json?.error || "Couldn't prepare the file for download.")
+      }
 
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = `${item.title.replace(/\.[^.]+$/, "")}.txt`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-    toast.success("Download started")
+      const link = document.createElement("a")
+      link.href = url
+      link.download = item.title
+      link.target = "_blank"
+      link.rel = "noopener noreferrer"
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      toast.success("Download started")
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Couldn't download this file.",
+      )
+    } finally {
+      setDownloading(false)
+    }
   }
 
   return (
@@ -63,8 +69,12 @@ export function DocumentActions({ item }: { item: KnowledgeItem }) {
         <Share2 data-icon="inline-start" />
         Share
       </Button>
-      <Button variant="outline" onClick={download}>
-        <Download data-icon="inline-start" />
+      <Button variant="outline" onClick={download} disabled={downloading}>
+        {downloading ? (
+          <Loader2 data-icon="inline-start" className="animate-spin" />
+        ) : (
+          <Download data-icon="inline-start" />
+        )}
         Download
       </Button>
     </div>
