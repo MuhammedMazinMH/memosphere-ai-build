@@ -8,7 +8,7 @@ import {
 const faqs = [
   {
     q: 'What types of files can I upload?',
-    a: 'MemoSphere supports PDFs, presentations (PPT/PPTX), text and markdown notes, images of handwritten notes or whiteboards, and lecture videos. Everything is processed into structured, searchable knowledge.',
+    a: 'MemoSphere supports PDFs, presentations (PPT/PPTX), text and markdown notes, and images of handwritten notes or whiteboards. Everything is processed into structured, searchable knowledge.',
   },
   {
     q: 'How is this different from a normal note-taking app?',

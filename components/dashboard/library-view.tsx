@@ -42,7 +42,6 @@ const types: { value: FileType | "all"; label: string }[] = [
   { value: "note", label: "Notes" },
   { value: "presentation", label: "Slides" },
   { value: "image", label: "Images" },
-  { value: "video", label: "Videos" },
 ]
 
 export function LibraryView() {

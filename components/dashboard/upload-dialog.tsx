@@ -34,8 +34,15 @@ export function UploadDialog({
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const accept = ".pdf,.pptx,.md,.png,.jpg,.jpeg,.mp4"
+  const accept = ".pdf,.pptx,.ppt,.md,.txt,.png,.jpg,.jpeg"
   const maxBytes = 200 * 1024 * 1024
+
+  // Video/audio are no longer supported. Reject them client-side with a
+  // friendly message before any upload is attempted.
+  const blockedExtensions = [
+    "mp4", "mov", "avi", "mkv", "webm", "m4v",
+    "mp3", "wav", "aac", "ogg", "flac", "m4a",
+  ]
 
   function openFilePicker() {
     inputRef.current?.click()
@@ -44,6 +51,15 @@ export function UploadDialog({
   function handleFiles(files: FileList | null) {
     const file = files?.[0]
     if (!file) return
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? ""
+    const isAvType =
+      file.type.startsWith("video/") ||
+      file.type.startsWith("audio/") ||
+      blockedExtensions.includes(ext)
+    if (isAvType) {
+      toast.error("Video and audio files aren't supported. Upload a PDF, PPTX, MD, TXT, or image.")
+      return
+    }
     if (file.size > maxBytes) {
       toast.error("File is too large. Maximum size is 200MB.")
       return
@@ -120,7 +136,7 @@ export function UploadDialog({
         <DialogHeader>
           <DialogTitle>Upload to your knowledge base</DialogTitle>
           <DialogDescription>
-            Add PDFs, slides, notes, images, or videos. We&apos;ll extract concepts automatically.
+            Add PDFs, slides, notes, or images. We&apos;ll extract concepts automatically.
           </DialogDescription>
         </DialogHeader>
 
@@ -160,7 +176,7 @@ export function UploadDialog({
                 {dragActive ? "Drop your file here" : "Click to browse or drop files"}
               </span>
               <span className="text-xs text-muted-foreground">
-                PDF, PPTX, MD, PNG, MP4 up to 200MB
+                PDF, PPTX, MD, TXT, PNG, JPG up to 200MB
               </span>
             </button>
             <Field>
