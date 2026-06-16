@@ -6,7 +6,7 @@
  */
 import { documentRepository } from '@/db/repositories/document-repository'
 import { s3Service, type UploadInput } from '@/lib/services/s3-service'
-import type { Document, UploadedDocument } from '@/types'
+import type { Document, UploadedDocument, DerivedSubject } from '@/types'
 
 export const documentService = {
   getDocuments(): Document[] {
@@ -60,6 +60,51 @@ export const documentService = {
       console.error('[v0] documentService.listDocumentsByUser DynamoDB error:', error)
       return documentRepository.findAll()
     }
+  },
+
+  /**
+   * Derives the authenticated user's subjects by grouping their real uploaded
+   * documents on the stored `subject` field. No AI classification, no fake
+   * concepts, no placeholder mastery — only counts and dates computed from real
+   * records. Returns an empty array when the user has no documents.
+   */
+  async getDerivedSubjectsByUser(userId: string): Promise<DerivedSubject[]> {
+    if (!userId) return []
+    const documents = await this.listDocumentsByUser(userId)
+
+    const groups = new Map<string, DerivedSubject>()
+    for (const doc of documents) {
+      const name = (doc.subject ?? '').trim() || 'Uncategorized'
+      // Group by name (case-insensitive) so casing variants merge together.
+      const key = name.toLowerCase()
+      const existing = groups.get(key)
+      const uploadedAt =
+        typeof doc.uploadedAt === 'number' ? doc.uploadedAt : null
+
+      if (existing) {
+        existing.documentCount += 1
+        if (
+          uploadedAt !== null &&
+          (existing.lastUpdated === null || uploadedAt > existing.lastUpdated)
+        ) {
+          existing.lastUpdated = uploadedAt
+        }
+      } else {
+        groups.set(key, {
+          // Prefer the document's subjectId for routing; fall back to a slug.
+          id: doc.subjectId || key.replace(/\s+/g, '-'),
+          name,
+          documentCount: 1,
+          lastUpdated: uploadedAt,
+          mastery: 0,
+        })
+      }
+    }
+
+    // Most recently updated subjects first; undated groups sink to the bottom.
+    return Array.from(groups.values()).sort(
+      (a, b) => (b.lastUpdated ?? 0) - (a.lastUpdated ?? 0),
+    )
   },
 
   /** Uploads a file to S3 and returns its stored metadata (direct S3 call; deprecated path). */

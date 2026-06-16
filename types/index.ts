@@ -53,6 +53,25 @@ export interface Subject {
 }
 
 /**
+ * A subject derived at request time by grouping a user's real uploaded
+ * documents by their stored `subject` field. There is no AI classification and
+ * no fabricated metrics here — only counts/dates computed from real records.
+ * `mastery` is always 0 until a real mastery system exists.
+ */
+export interface DerivedSubject {
+  /** Stable id for routing — the subjectId stored on the documents, or a slug. */
+  id: string
+  /** Human-readable subject name from the document's `subject` field. */
+  name: string
+  /** Number of the user's documents grouped under this subject. */
+  documentCount: number
+  /** Most recent upload time (epoch ms) among the grouped documents, or null. */
+  lastUpdated: number | null
+  /** Mastery percentage — always 0 until a mastery system is built. */
+  mastery: number
+}
+
+/**
  * Domain model: Document (a stored knowledge item)
  *
  * Production note:
