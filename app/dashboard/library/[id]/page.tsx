@@ -20,15 +20,13 @@ import { FileTypeIcon, fileTypeLabel } from "@/components/dashboard/file-type-ic
 import { documentService } from "@/lib/services"
 import { formatRelativeTime } from "@/lib/utils"
 
-const knowledgeItems = documentService.getDocuments()
-
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>
 }): Promise<Metadata> {
   const { id } = await params
-  const item = knowledgeItems.find((k) => k.id === id)
+  const item = await documentService.getDocumentById(id)
   return { title: item ? item.title : "Document" }
 }
 
@@ -55,7 +53,7 @@ export default async function DocumentPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const item = knowledgeItems.find((k) => k.id === id)
+  const item = await documentService.getDocumentById(id)
   if (!item) notFound()
 
   return (
