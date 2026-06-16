@@ -99,11 +99,44 @@ export const documentService = {
       sizeBytes: input.sizeBytes,
       fileUrl: undefined,
       status: 'uploaded',
+      extractedText: '',
+      extractionStatus: 'pending',
+      extractedAt: undefined,
     }
     return documentRepository.create({
       ...document,
       userId: input.userId,
     } as Document)
+  },
+
+  /** Marks a document's extraction as in-progress. */
+  async markExtractionProcessing(id: string): Promise<void> {
+    try {
+      await documentRepository.update(id, { extractionStatus: 'processing' })
+    } catch (error) {
+      console.error('[v0] markExtractionProcessing error:', error)
+    }
+  },
+
+  /** Persists successful extraction output for a document. */
+  async saveExtraction(id: string, text: string): Promise<void> {
+    await documentRepository.update(id, {
+      extractedText: text,
+      extractionStatus: 'completed',
+      extractedAt: Date.now(),
+    })
+  },
+
+  /** Marks a document's extraction as failed (document is preserved). */
+  async markExtractionFailed(id: string): Promise<void> {
+    try {
+      await documentRepository.update(id, {
+        extractionStatus: 'failed',
+        extractedAt: Date.now(),
+      })
+    } catch (error) {
+      console.error('[v0] markExtractionFailed error:', error)
+    }
   },
 
   /** Helper to format bytes for display. */

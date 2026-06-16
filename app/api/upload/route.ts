@@ -8,6 +8,7 @@
 import { auth } from '@clerk/nextjs/server'
 import { s3Service } from '@/lib/services/s3-service'
 import { documentService, subjectService } from '@/lib/services'
+import { extractionService } from '@/lib/services/extraction/extraction-service'
 import { ok, badRequest, unauthorized, serverError } from '@/lib/api/response'
 
 export async function POST(request: Request) {
@@ -92,7 +93,44 @@ export async function POST(request: Request) {
       s3Key: key,
     })
 
-    return ok({ document }, { status: 201 })
+    // Phase 1: extract raw text from the in-memory bytes (no AI yet).
+    // Extraction is best-effort — a failure must NOT fail the upload. The
+    // document is always preserved; only its extractionStatus reflects the
+    // outcome. We reuse the bytes already read for the S3 upload above.
+    let extraction: { status: string; charCount: number } = {
+      status: 'completed',
+      charCount: 0,
+    }
+    if (extractionService.isExtractable(fileName)) {
+      await documentService.markExtractionProcessing(document.id)
+      try {
+        const result = await extractionService.extract(bytes, fileName)
+        await documentService.saveExtraction(document.id, result.text)
+        document.extractedText = result.text
+        document.extractionStatus = 'completed'
+        document.extractedAt = Date.now()
+        extraction = { status: 'completed', charCount: result.charCount }
+      } catch (extractError) {
+        console.error('[v0] text extraction failed:', extractError)
+        await documentService.markExtractionFailed(document.id)
+        document.extractionStatus = 'failed'
+        document.extractedAt = Date.now()
+        extraction = { status: 'failed', charCount: 0 }
+      }
+    } else {
+      // Nothing to extract for this format (e.g. images): leave text empty
+      // but mark the step completed so the UI doesn't show "pending" forever.
+      try {
+        await documentService.saveExtraction(document.id, '')
+      } catch (saveError) {
+        console.error('[v0] mark non-extractable completed failed:', saveError)
+      }
+      document.extractedText = ''
+      document.extractionStatus = 'completed'
+      document.extractedAt = Date.now()
+    }
+
+    return ok({ document, extraction }, { status: 201 })
   } catch (error) {
     console.error('[v0] upload error:', error)
     return serverError(

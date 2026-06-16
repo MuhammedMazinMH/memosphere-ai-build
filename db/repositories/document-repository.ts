@@ -75,4 +75,24 @@ export const documentRepository = {
     await putItem('documents', document as unknown as Record<string, unknown>)
     return document
   },
+
+  /**
+   * Merges a partial update into an existing document and persists it.
+   * Reads the current item, applies the patch, and re-puts (full-item write).
+   * Returns the updated document, or undefined if it no longer exists.
+   */
+  async update(
+    id: string,
+    patch: Partial<Document>,
+  ): Promise<Document | undefined> {
+    if (!isDatabaseConnected()) throw new Error('Database not connected')
+    const existing = await getItem<Document>(
+      'documents',
+      buildKey('documents', id),
+    )
+    if (!existing) return undefined
+    const updated: Document = { ...existing, ...patch, id: existing.id }
+    await putItem('documents', updated as unknown as Record<string, unknown>)
+    return updated
+  },
 }

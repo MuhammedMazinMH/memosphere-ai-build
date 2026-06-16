@@ -61,6 +61,15 @@ export interface Subject {
  */
 export type DocumentStatus = 'uploaded' | 'processing' | 'ready' | 'failed'
 
+/**
+ * Lifecycle of raw-text extraction from the uploaded file.
+ * - pending: queued, not started
+ * - processing: extraction in progress
+ * - completed: text successfully extracted (may be empty for empty files)
+ * - failed: extraction errored (document is still kept)
+ */
+export type ExtractionStatus = 'pending' | 'processing' | 'completed' | 'failed'
+
 export interface Document {
   id: string
   /** Owner (Clerk user id). Partition key of the `byUser` GSI. */
@@ -84,6 +93,12 @@ export interface Document {
   fileUrl?: string
   /** Processing lifecycle status. */
   status?: DocumentStatus
+  /** Raw text extracted from the file (Phase 1: no AI, just extraction). */
+  extractedText?: string
+  /** Lifecycle of the text-extraction step. */
+  extractionStatus?: ExtractionStatus
+  /** When extraction completed/failed, as epoch milliseconds. */
+  extractedAt?: number
 }
 
 /** Backwards-compatible alias used across the dashboard UI. */
