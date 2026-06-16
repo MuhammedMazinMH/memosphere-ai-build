@@ -42,10 +42,9 @@ function assertUploadAllowed(input: UploadInput): void {
   }
 }
 
-function buildKey(fileName: string): string {
-  // Production: prefix with the user id once auth is connected, e.g.
-  // `${userId}/${Date.now()}-${fileName}`
-  return `uploads/${Date.now()}-${fileName}`
+function buildKey(userId: string, fileName: string): string {
+  // User-scoped key: u/<userId>/<timestamp>-<fileName>
+  return `u/${userId}/${Date.now()}-${fileName}`
 }
 
 const bucket = (): string => env.AWS_S3_BUCKET_NAME ?? 'memosphere-uploads'
@@ -74,11 +73,11 @@ async function getClient(): Promise<S3Client> {
 export const s3Service = {
   /** Uploads a PDF / PPT / image and returns its stored metadata. */
   async uploadFile(
-    input: UploadInput,
+    input: UploadInput & { userId: string },
     bytes?: ArrayBuffer,
   ): Promise<UploadedDocument> {
     assertUploadAllowed(input)
-    const key = buildKey(input.fileName)
+    const key = buildKey(input.userId, input.fileName)
 
     if (features.storage() && bytes) {
       const { PutObjectCommand } = await import('@aws-sdk/client-s3')

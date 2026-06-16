@@ -1,23 +1,43 @@
 /**
  * Documents API.
  *
+ * GET: Returns documents for the authenticated user via the byUser GSI (Query).
+ * POST: Creates and persists new document metadata to DynamoDB.
+ *
  * Production note:
- * - File bytes go to S3 (see /api/upload). This route manages document
- *   metadata records in DynamoDB (table `documents`, with the `byUser` GSI)
- *   via documentService. The write path is implemented in a later phase.
+ * - File bytes live in S3. This route manages document metadata records in
+ *   DynamoDB (table `documents` with the `byUser` GSI). See /api/upload for
+ *   the full upload flow (S3 + metadata persistence).
  */
+import { auth } from '@clerk/nextjs/server'
 import { documentService } from '@/lib/services'
 import { documentSchema, validate } from '@/lib/validations'
-import { ok, badRequest } from '@/lib/api/response'
+import { ok, badRequest, unauthorized, serverError } from '@/lib/api/response'
 
 export async function GET() {
-  return ok(await documentService.listDocuments())
+  // Authenticate user
+  const user = await auth()
+  if (!user.userId) {
+    return unauthorized('Authentication required')
+  }
+
+  try {
+    // Query documents scoped to the authenticated user via byUser GSI
+    const documents = await documentService.listDocumentsByUser(user.userId)
+    return ok(documents)
+  } catch (error) {
+    console.error('[v0] documents GET error:', error)
+    return serverError(
+      error instanceof Error ? error.message : 'Failed to fetch documents',
+    )
+  }
 }
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}))
   const result = validate(documentSchema, body)
   if (!result.success) return badRequest(result.errors)
-  // TODO(dynamodb): persist document metadata via documentService.create(...)
-  return ok({ created: result.data, mock: true }, { status: 201 })
+  // Note: create() is called from /api/upload after S3 upload succeeds.
+  // This endpoint is available but unused in the current flow.
+  return ok({ created: result.data }, { status: 201 })
 }

@@ -14,16 +14,24 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { Field, FieldGroup, FieldLabel, FieldDescription } from "@/components/ui/field"
-import { UploadCloud, FileText, CheckCircle2 } from "lucide-react"
+import { UploadCloud, FileText, CheckCircle2, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
 
-export function UploadDialog({ trigger }: { trigger: React.ReactNode }) {
+export function UploadDialog({
+  trigger,
+  onUploadComplete,
+}: {
+  trigger: React.ReactNode
+  onUploadComplete?: () => void
+}) {
   const [open, setOpen] = useState(false)
-  const [stage, setStage] = useState<"idle" | "uploading" | "processing" | "done">("idle")
+  const [stage, setStage] = useState<"idle" | "uploading" | "done" | "error">("idle")
   const [progress, setProgress] = useState(0)
   const [fileName, setFileName] = useState("")
   const [subject, setSubject] = useState("")
   const [dragActive, setDragActive] = useState(false)
+  const [errorMsg, setErrorMsg] = useState("")
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const accept = ".pdf,.pptx,.md,.png,.jpg,.jpeg,.mp4"
@@ -41,23 +49,52 @@ export function UploadDialog({ trigger }: { trigger: React.ReactNode }) {
       return
     }
     setFileName(file.name)
-    start()
+    setSelectedFile(file)
   }
 
-  function start() {
+  async function start() {
+    if (!selectedFile) return
+
     setStage("uploading")
     setProgress(0)
-    const interval = setInterval(() => {
-      setProgress((p) => {
-        if (p >= 100) {
-          clearInterval(interval)
-          setStage("processing")
-          setTimeout(() => setStage("done"), 1400)
-          return 100
-        }
-        return p + 10
+    setErrorMsg("")
+
+    try {
+      // Create FormData
+      const formData = new FormData()
+      formData.append("file", selectedFile)
+      if (subject.trim()) {
+        formData.append("subjectId", subject.trim())
+      }
+
+      // Upload
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
       })
-    }, 120)
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}))
+        throw new Error(error.error || `Upload failed (${response.status})`)
+      }
+
+      const result = await response.json()
+      setProgress(100)
+      setStage("done")
+
+      toast.success("Document uploaded successfully")
+      
+      // Call callback to refresh the library
+      onUploadComplete?.()
+
+      // Close after delay
+      setTimeout(() => close(false), 1200)
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Upload failed"
+      setErrorMsg(msg)
+      setStage("error")
+      toast.error(msg)
+    }
   }
 
   function reset() {
@@ -66,6 +103,8 @@ export function UploadDialog({ trigger }: { trigger: React.ReactNode }) {
     setFileName("")
     setSubject("")
     setDragActive(false)
+    setErrorMsg("")
+    setSelectedFile(null)
     if (inputRef.current) inputRef.current.value = ""
   }
 
@@ -137,26 +176,28 @@ export function UploadDialog({ trigger }: { trigger: React.ReactNode }) {
                 Enter any subject you like. Leave blank to let AI detect it from your file.
               </FieldDescription>
             </Field>
+            <Button
+              onClick={start}
+              disabled={!selectedFile}
+              className="w-full"
+            >
+              Upload
+            </Button>
           </FieldGroup>
         )}
 
-        {(stage === "uploading" || stage === "processing") && (
+        {stage === "uploading" && (
           <div className="flex flex-col gap-4 py-2">
             <div className="flex items-center gap-3 rounded-lg border p-3">
               <FileText className="size-8 text-primary" />
               <div className="flex flex-1 flex-col">
                 <span className="truncate text-sm font-medium">{fileName}</span>
                 <span className="text-xs text-muted-foreground">
-                  {stage === "uploading" ? `Uploading ${progress}%` : "Extracting concepts with AI..."}
+                  Uploading {progress}%
                 </span>
               </div>
             </div>
-            <Progress value={stage === "processing" ? 100 : progress} />
-            {stage === "processing" && (
-              <p className="text-center text-xs text-muted-foreground">
-                Analyzing content, detecting concepts, and generating a summary.
-              </p>
-            )}
+            <Progress value={progress} />
           </div>
         )}
 
@@ -166,20 +207,25 @@ export function UploadDialog({ trigger }: { trigger: React.ReactNode }) {
               <CheckCircle2 className="size-7" />
             </span>
             <div className="flex flex-col gap-1">
-              <p className="text-sm font-medium">Knowledge added</p>
+              <p className="text-sm font-medium">Upload complete</p>
               <p className="text-xs text-muted-foreground">
-                {subject.trim()
-                  ? `Concepts extracted and linked to ${subject.trim()}.`
-                  : "Concepts extracted and your subject was detected automatically."}
+                Document processed and added to your library.
               </p>
             </div>
-            <Button
-              onClick={() => {
-                close(false)
-                toast.success("Document processed and added to your library.")
-              }}
-            >
-              Done
+          </div>
+        )}
+
+        {stage === "error" && (
+          <div className="flex flex-col items-center gap-3 py-6 text-center">
+            <span className="flex size-12 items-center justify-center rounded-full bg-destructive/15 text-destructive">
+              <AlertCircle className="size-7" />
+            </span>
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-medium">Upload failed</p>
+              <p className="text-xs text-muted-foreground">{errorMsg}</p>
+            </div>
+            <Button onClick={() => close(false)} variant="outline">
+              Close
             </Button>
           </div>
         )}

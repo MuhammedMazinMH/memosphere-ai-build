@@ -13,6 +13,7 @@ import {
   getItem,
   buildKey,
   queryByIndex,
+  putItem,
 } from '@/db/client'
 import { gsisOf } from '@/db/tables'
 import type { Document } from '@/types'
@@ -66,5 +67,12 @@ export const documentRepository = {
       byUser.partitionKey,
       userId,
     )
+  },
+
+  /** Creates and persists a document to DynamoDB, returns the created item. */
+  async create(document: Document): Promise<Document> {
+    if (!isDatabaseConnected()) throw new Error('Database not connected')
+    await putItem('documents', document as unknown as Record<string, unknown>)
+    return document
   },
 }

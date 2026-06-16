@@ -12,8 +12,22 @@ export function ok<T>(data: T, init?: ResponseInit) {
   return NextResponse.json({ success: true, data }, init)
 }
 
-export function badRequest(errors: Record<string, string[]>) {
-  return NextResponse.json({ success: false, errors }, { status: 400 })
+export function badRequest(errors: Record<string, string[]> | { error: string }) {
+  return NextResponse.json({ success: false, ...errors }, { status: 400 })
+}
+
+export function unauthorized(message: string) {
+  return NextResponse.json(
+    { success: false, error: message },
+    { status: 401 },
+  )
+}
+
+export function serverError(message: string) {
+  return NextResponse.json(
+    { success: false, error: message },
+    { status: 500 },
+  )
 }
 
 export function notImplemented(message: string) {

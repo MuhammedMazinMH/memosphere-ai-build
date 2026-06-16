@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { Search, Sparkles, MoreVertical, LayoutGrid, List } from "lucide-react"
 import { PageHeader } from "@/components/dashboard/page-header"
@@ -29,12 +29,11 @@ import {
 } from "@/components/ui/empty"
 import { UploadDialog } from "@/components/dashboard/upload-dialog"
 import { FileTypeIcon, fileTypeLabel } from "@/components/dashboard/file-type-icon"
-import { documentService, subjectService } from "@/lib/services"
-import type { FileType } from "@/types"
+import { subjectService } from "@/lib/services"
+import type { Document, FileType } from "@/types"
 import { Upload, FileSearch } from "lucide-react"
 import { cn, formatRelativeTime } from "@/lib/utils"
 
-const knowledgeItems = documentService.getDocuments()
 const subjects = subjectService.getSubjects()
 
 const types: { value: FileType | "all"; label: string }[] = [
@@ -51,9 +50,30 @@ export function LibraryView() {
   const [type, setType] = useState<FileType | "all">("all")
   const [subject, setSubject] = useState("all")
   const [layout, setLayout] = useState("grid")
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Fetch documents from API
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        setIsLoading(true)
+        const response = await fetch("/api/documents")
+        if (response.ok) {
+          const data = await response.json()
+          setDocuments(data)
+        }
+      } catch (error) {
+        console.error('[v0] Failed to fetch documents:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchDocuments()
+  }, [])
 
   const filtered = useMemo(() => {
-    return knowledgeItems.filter((item) => {
+    return documents.filter((item) => {
       const matchesQuery =
         item.title.toLowerCase().includes(query.toLowerCase()) ||
         item.excerpt.toLowerCase().includes(query.toLowerCase())
@@ -61,7 +81,7 @@ export function LibraryView() {
       const matchesSubject = subject === "all" || item.subjectId === subject
       return matchesQuery && matchesType && matchesSubject
     })
-  }, [query, type, subject])
+  }, [query, type, subject, documents])
 
   return (
     <>
@@ -76,6 +96,21 @@ export function LibraryView() {
               Upload
             </Button>
           }
+          onUploadComplete={() => {
+            // Refresh documents after upload
+            const fetchDocuments = async () => {
+              try {
+                const response = await fetch("/api/documents")
+                if (response.ok) {
+                  const data = await response.json()
+                  setDocuments(data)
+                }
+              } catch (error) {
+                console.error('[v0] Failed to refresh documents:', error)
+              }
+            }
+            fetchDocuments()
+          }}
         />
       </PageHeader>
 
