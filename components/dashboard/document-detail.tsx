@@ -1,6 +1,7 @@
 "use client"
 
-import { Sparkles, ListChecks, Lightbulb, FileText, AlertTriangle, Loader2 } from "lucide-react"
+import dynamic from "next/dynamic"
+import { Sparkles, ListChecks, Lightbulb, FileText, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -8,6 +9,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Document, ExtractionStatus } from "@/types"
 import { formatRelativeTime } from "@/lib/utils"
 import { fileTypeLabel } from "@/components/dashboard/file-type-icon"
+
+// react-pdf relies on browser-only APIs, so load the viewer client-side only.
+const DocumentViewer = dynamic(
+  () => import("./document-viewer").then((m) => m.DocumentViewer),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex flex-col items-center justify-center gap-2 py-20 text-muted-foreground">
+        <Loader2 className="size-6 animate-spin text-primary" />
+        <p className="text-sm">Loading viewer…</p>
+      </div>
+    ),
+  },
+)
 
 function NotGeneratedYet({
   icon,
@@ -56,54 +71,6 @@ function ExtractionBadge({ status }: { status: ExtractionStatus | undefined }) {
   return <Badge variant={variant}>{extractionLabel(status)}</Badge>
 }
 
-/** Renders the real extracted document text, handling every status/empty case. */
-function ContentBody({ item }: { item: Document }) {
-  const status = item.extractionStatus
-  const text = item.extractedText ?? ""
-
-  if (status === "failed") {
-    return (
-      <div className="flex flex-col items-center gap-3 p-10 text-center text-muted-foreground">
-        <AlertTriangle className="size-6 text-destructive" />
-        <p className="max-w-sm text-sm">
-          We couldn&apos;t extract text from this document. The file is still
-          stored and available to download.
-        </p>
-      </div>
-    )
-  }
-
-  if (status === "processing" || status === "pending") {
-    return (
-      <div className="flex flex-col items-center gap-3 p-10 text-center text-muted-foreground">
-        <Loader2 className="size-6 animate-spin text-primary" />
-        <p className="text-sm">Extracting document text…</p>
-      </div>
-    )
-  }
-
-  // completed (or legacy doc with no status) but no text available
-  if (!text.trim()) {
-    return (
-      <div className="flex flex-col items-center gap-3 p-10 text-center text-muted-foreground">
-        <FileText className="size-6" />
-        <p className="max-w-sm text-sm">
-          No readable text was found in this document. It may be an image-based
-          file or contain no selectable text.
-        </p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="max-h-[70vh] overflow-auto rounded-md bg-muted/40 p-4">
-      <pre className="whitespace-pre-wrap break-words font-mono text-sm leading-relaxed text-foreground">
-        {text}
-      </pre>
-    </div>
-  )
-}
-
 export function DocumentDetail({ item }: { item: Document }) {
   const charCount = (item.extractedText ?? "").length
 
@@ -133,7 +100,7 @@ export function DocumentDetail({ item }: { item: Document }) {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-2">
             <CardContent className="p-4">
-              <ContentBody item={item} />
+              <DocumentViewer item={item} />
             </CardContent>
           </Card>
 
