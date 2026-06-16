@@ -15,12 +15,37 @@
  * bundle.
  */
 
+import type { DocumentStats } from '@/types'
+
 export type ExtractableFormat = 'pdf' | 'pptx' | 'md' | 'txt'
 
 export interface ExtractionResult {
   text: string
   format: ExtractableFormat
-  charCount: number
+  /** Deterministic statistics computed from the extracted text. */
+  stats: DocumentStats
+}
+
+/** Words-per-minute baseline used for the reading-time estimate. */
+const WORDS_PER_MINUTE = 200
+
+/**
+ * Computes deterministic statistics from extracted text. No AI — pure counting.
+ * `pageCount` is supplied by formats that expose it (PDF); null otherwise.
+ */
+export function computeStats(
+  text: string,
+  pageCount: number | null,
+): DocumentStats {
+  const trimmed = text.trim()
+  const wordCount = trimmed ? trimmed.split(/\s+/).length : 0
+  const readingTimeMinutes = Math.ceil(wordCount / WORDS_PER_MINUTE) || 0
+  return {
+    charCount: text.length,
+    wordCount,
+    readingTimeMinutes,
+    pageCount,
+  }
 }
 
 /** File extensions we can extract text from in Phase 1. */
@@ -47,11 +72,21 @@ function normalize(text: string): string {
     .trim()
 }
 
-/** Extracts text from a PDF using unpdf (pdf.js under the hood). */
-async function extractPdf(bytes: Uint8Array): Promise<string> {
+/**
+ * Extracts text from a PDF using unpdf (pdf.js under the hood). Returns the
+ * merged text plus the total page count exposed by pdf.js.
+ */
+async function extractPdf(
+  bytes: Uint8Array,
+): Promise<{ text: string; pageCount: number | null }> {
   const { extractText } = await import('unpdf')
-  const { text } = await extractText(bytes, { mergePages: true })
-  return typeof text === 'string' ? text : (text as string[]).join('\n\n')
+  const { text, totalPages } = await extractText(bytes, { mergePages: true })
+  const merged =
+    typeof text === 'string' ? text : (text as string[]).join('\n\n')
+  return {
+    text: merged,
+    pageCount: typeof totalPages === 'number' ? totalPages : null,
+  }
 }
 
 /**
@@ -123,12 +158,16 @@ export const extractionService = {
 
     let raw: string
     let format: ExtractableFormat
+    let pageCount: number | null = null
 
     switch (ext) {
-      case 'pdf':
+      case 'pdf': {
         format = 'pdf'
-        raw = await extractPdf(bytes)
+        const pdf = await extractPdf(bytes)
+        raw = pdf.text
+        pageCount = pdf.pageCount
         break
+      }
       case 'pptx':
         format = 'pptx'
         raw = await extractPptx(bytes)
@@ -150,6 +189,6 @@ export const extractionService = {
     }
 
     const text = normalize(raw)
-    return { text, format, charCount: text.length }
+    return { text, format, stats: computeStats(text, pageCount) }
   },
 }

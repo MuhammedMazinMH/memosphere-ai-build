@@ -22,3 +22,5 @@ export { examReadinessService } from '@/lib/services/exam-readiness/exam-readine
 export { analyticsService } from '@/lib/services/analytics/analytics-service'
 export { s3Service } from '@/lib/services/s3-service'
 export { getAIProvider } from '@/lib/services/ai'
+export { extractionService } from '@/lib/services/extraction/extraction-service'
+export { processingService } from '@/lib/services/processing/processing-service'

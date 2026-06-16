@@ -72,7 +72,12 @@ function ExtractionBadge({ status }: { status: ExtractionStatus | undefined }) {
 }
 
 export function DocumentDetail({ item }: { item: Document }) {
-  const charCount = (item.extractedText ?? "").length
+  // Prefer the persisted, computed stats; fall back to a live char count for
+  // legacy records that predate the statistics pipeline.
+  const charCount = item.stats?.charCount ?? (item.extractedText ?? "").length
+  const wordCount = item.stats?.wordCount
+  const readingTime = item.stats?.readingTimeMinutes
+  const pageCount = item.stats?.pageCount
 
   return (
     <Tabs defaultValue="content" className="gap-6">
@@ -126,11 +131,35 @@ export function DocumentDetail({ item }: { item: Document }) {
                 <ExtractionBadge status={item.extractionStatus} />
               </div>
               <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Extracted characters</span>
+                <span className="text-muted-foreground">Characters</span>
                 <span className="font-medium tabular-nums">
                   {charCount.toLocaleString()}
                 </span>
               </div>
+              {wordCount !== undefined ? (
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-muted-foreground">Words</span>
+                  <span className="font-medium tabular-nums">
+                    {wordCount.toLocaleString()}
+                  </span>
+                </div>
+              ) : null}
+              {readingTime !== undefined ? (
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-muted-foreground">Reading time</span>
+                  <span className="font-medium tabular-nums">
+                    {readingTime === 0
+                      ? "< 1 min"
+                      : `${readingTime} min`}
+                  </span>
+                </div>
+              ) : null}
+              {pageCount != null ? (
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-muted-foreground">Pages</span>
+                  <span className="font-medium tabular-nums">{pageCount}</span>
+                </div>
+              ) : null}
               <div className="flex items-center justify-between gap-4">
                 <span className="text-muted-foreground">Document ID</span>
                 <span className="max-w-40 truncate font-mono text-xs" title={item.id}>

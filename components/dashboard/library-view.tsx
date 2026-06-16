@@ -29,6 +29,10 @@ import {
 } from "@/components/ui/empty"
 import { UploadDialog } from "@/components/dashboard/upload-dialog"
 import { FileTypeIcon, fileTypeLabel } from "@/components/dashboard/file-type-icon"
+import {
+  ProcessingStatusBadge,
+  resolveProcessingStatus,
+} from "@/components/dashboard/processing-status-badge"
 import { subjectService } from "@/lib/services"
 import type { Document, FileType } from "@/types"
 import { Upload, FileSearch } from "lucide-react"
@@ -201,6 +205,7 @@ export function LibraryView() {
                   <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
                     <Badge variant="outline">{fileTypeLabel(item.type)}</Badge>
                     <Badge variant="secondary">{item.subject}</Badge>
+                    <ProcessingStatusBadge status={resolveProcessingStatus(item)} />
                     {item.summarized ? (
                       <Badge variant="secondary" className="gap-1 text-primary">
                         <Sparkles className="size-3" />
@@ -239,6 +244,7 @@ export function LibraryView() {
                     </div>
                     <div className="hidden items-center gap-2 sm:flex">
                       <Badge variant="secondary">{item.subject}</Badge>
+                      <ProcessingStatusBadge status={resolveProcessingStatus(item)} />
                       {item.summarized ? (
                         <Sparkles className={cn("size-4 text-primary")} />
                       ) : null}

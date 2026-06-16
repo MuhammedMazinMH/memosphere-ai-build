@@ -6,7 +6,7 @@
  */
 import { documentRepository } from '@/db/repositories/document-repository'
 import { s3Service, type UploadInput } from '@/lib/services/s3-service'
-import type { Document, UploadedDocument, DerivedSubject } from '@/types'
+import type { Document, UploadedDocument, DerivedSubject, DocumentStats } from '@/types'
 
 export const documentService = {
   getDocuments(): Document[] {
@@ -147,6 +147,8 @@ export const documentService = {
       extractedText: '',
       extractionStatus: 'pending',
       extractedAt: undefined,
+      processingStatus: 'uploaded',
+      stats: undefined,
     }
     return documentRepository.create({
       ...document,
@@ -154,29 +156,42 @@ export const documentService = {
     } as Document)
   },
 
-  /** Marks a document's extraction as in-progress. */
+  /** Marks a document's extraction (and overall processing) as in-progress. */
   async markExtractionProcessing(id: string): Promise<void> {
     try {
-      await documentRepository.update(id, { extractionStatus: 'processing' })
+      await documentRepository.update(id, {
+        extractionStatus: 'processing',
+        processingStatus: 'processing',
+      })
     } catch (error) {
       console.error('[v0] markExtractionProcessing error:', error)
     }
   },
 
-  /** Persists successful extraction output for a document. */
-  async saveExtraction(id: string, text: string): Promise<void> {
+  /**
+   * Persists successful extraction output and computed statistics, and marks
+   * the overall processing lifecycle as completed.
+   */
+  async saveExtraction(
+    id: string,
+    text: string,
+    stats?: DocumentStats,
+  ): Promise<void> {
     await documentRepository.update(id, {
       extractedText: text,
       extractionStatus: 'completed',
+      processingStatus: 'completed',
       extractedAt: Date.now(),
+      stats,
     })
   },
 
-  /** Marks a document's extraction as failed (document is preserved). */
+  /** Marks a document's extraction/processing as failed (document is preserved). */
   async markExtractionFailed(id: string): Promise<void> {
     try {
       await documentRepository.update(id, {
         extractionStatus: 'failed',
+        processingStatus: 'failed',
         extractedAt: Date.now(),
       })
     } catch (error) {

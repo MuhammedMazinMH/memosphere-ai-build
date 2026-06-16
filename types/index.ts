@@ -89,6 +89,29 @@ export type DocumentStatus = 'uploaded' | 'processing' | 'ready' | 'failed'
  */
 export type ExtractionStatus = 'pending' | 'processing' | 'completed' | 'failed'
 
+/**
+ * Overall document processing lifecycle (requirement: uploaded → processing →
+ * completed → failed). This tracks the document as a whole, independent of the
+ * lower-level `extractionStatus`. Library cards surface this value.
+ */
+export type ProcessingStatus = 'uploaded' | 'processing' | 'completed' | 'failed'
+
+/**
+ * Structured statistics computed from the extracted text. No AI — these are
+ * deterministic counts persisted alongside the document for reuse by future
+ * features (AI Summary, Quiz Generator, Universal Search, Knowledge Graph).
+ */
+export interface DocumentStats {
+  /** Total character count of the extracted text. */
+  charCount: number
+  /** Whitespace-delimited word count of the extracted text. */
+  wordCount: number
+  /** Estimated reading time in minutes (~200 wpm), min 0. */
+  readingTimeMinutes: number
+  /** Page count when the format exposes it (PDF); otherwise null. */
+  pageCount: number | null
+}
+
 export interface Document {
   id: string
   /** Owner (Clerk user id). Partition key of the `byUser` GSI. */
@@ -118,6 +141,10 @@ export interface Document {
   extractionStatus?: ExtractionStatus
   /** When extraction completed/failed, as epoch milliseconds. */
   extractedAt?: number
+  /** Overall document processing lifecycle (surfaced on Library cards). */
+  processingStatus?: ProcessingStatus
+  /** Deterministic statistics computed from the extracted text. */
+  stats?: DocumentStats
 }
 
 /** Backwards-compatible alias used across the dashboard UI. */
