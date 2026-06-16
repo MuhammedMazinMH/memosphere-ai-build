@@ -1,11 +1,18 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Document, Page } from 'react-pdf'
+import { Document, Page, pdfjs } from 'react-pdf'
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, AlertTriangle, Download, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { Document as DocumentType } from '@/types'
 import ReactMarkdown from 'react-markdown'
+
+// Configure the pdf.js worker on the client only. The CDN URL is pinned to the
+// exact pdfjs-dist version bundled with react-pdf, so it always matches in
+// production. Guarded by `typeof window` to prevent SSR crashes.
+if (typeof window !== 'undefined') {
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
+}
 
 interface DocumentViewerProps {
   item: DocumentType
