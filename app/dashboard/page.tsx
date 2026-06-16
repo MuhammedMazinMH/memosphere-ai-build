@@ -12,6 +12,7 @@ import { LearningIntelligence } from "@/components/dashboard/learning-intelligen
 import { ActivityFeed } from "@/components/dashboard/activity-feed"
 import { authService } from "@/lib/services/auth/auth-service.server"
 import { settingsRepository } from "@/db/repositories/settings-repository"
+import { documentService } from "@/lib/services"
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -29,23 +30,37 @@ export default async function DashboardPage() {
   const settings = user.id ? await settingsRepository.get(user.id) : null
   const goal = settings?.studyGoal ?? ""
 
+  // Real document count for the authenticated user, read from DynamoDB via the
+  // byUser GSI (same source as the Library, so the counts always agree). New
+  // accounts / empty databases naturally resolve to an empty list -> 0.
+  const documents = user.id ? await documentService.listDocumentsByUser(user.id) : []
+  const documentCount = documents.length
+
+  // The remaining metrics depend on systems that do not exist yet (concept
+  // extraction, study-activity tracking, mastery scoring). Until those are
+  // built they MUST report neutral zero values rather than mock/placeholder
+  // data, and the displayed streak is derived from activity (none yet -> 0).
+  const conceptsLearned = 0
+  const studyStreak = 0
+  const avgMastery = 0
+
   return (
     <>
       <PageHeader
         title={firstName ? `Welcome back, ${firstName}` : "Welcome back"}
-        description={goal ? `${goal} \u00B7 ${user.streak}-day streak` : `${user.streak}-day streak`}
+        description={goal ? `${goal} \u00B7 ${studyStreak}-day streak` : `${studyStreak}-day streak`}
       >
         <Badge variant="secondary" className="gap-1">
           <Flame className="size-3.5 text-chart-4" />
-          {user.streak} days
+          {studyStreak} days
         </Badge>
       </PageHeader>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Documents" value="0" icon={FileStack} />
-        <StatCard label="Concepts learned" value="0" icon={Lightbulb} />
-        <StatCard label="Study streak" value="0 days" icon={Flame} />
-        <StatCard label="Avg. mastery" value="0%" icon={Target} />
+        <StatCard label="Documents" value={String(documentCount)} icon={FileStack} />
+        <StatCard label="Concepts learned" value={String(conceptsLearned)} icon={Lightbulb} />
+        <StatCard label="Study streak" value={`${studyStreak} days`} icon={Flame} />
+        <StatCard label="Avg. mastery" value={`${avgMastery}%`} icon={Target} />
       </div>
 
       <AICoachWidget />
