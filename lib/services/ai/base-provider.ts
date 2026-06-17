@@ -79,11 +79,19 @@ const conceptsSchema = z.object({
 })
 
 // Map loose / synonym values the model frequently emits onto the strict enums
-// defined in conceptsSchema. Unknown values are left untouched so Zod's
+// defined in conceptsSchema. Keys are normalized to lowercase strings, so both
+// string synonyms ("new", "easy") and numeric difficulties (1-5, coerced to
+// "1".."5") resolve here. Unknown values are left untouched so Zod's
 // `.default()` still applies when the value is absent.
 const CONCEPT_STATUS_MAP: Record<string, 'core' | 'emerging' | 'weak' | 'connected'> = {
+  new: 'emerging',
+  learned: 'connected',
+  weak: 'weak',
   important: 'core',
   mastered: 'connected',
+  emerging: 'emerging',
+  connected: 'connected',
+  core: 'core',
   strong: 'connected',
   medium: 'emerging',
   learning: 'emerging',
@@ -92,12 +100,20 @@ const CONCEPT_STATUS_MAP: Record<string, 'core' | 'emerging' | 'weak' | 'connect
 }
 
 const CONCEPT_DIFFICULTY_MAP: Record<string, 'foundational' | 'intermediate' | 'advanced'> = {
+  '1': 'foundational',
+  '2': 'foundational',
+  '3': 'intermediate',
+  '4': 'advanced',
+  '5': 'advanced',
   easy: 'foundational',
   beginner: 'foundational',
   medium: 'intermediate',
   moderate: 'intermediate',
   hard: 'advanced',
   expert: 'advanced',
+  foundational: 'foundational',
+  intermediate: 'intermediate',
+  advanced: 'advanced',
 }
 
 function normalizeConceptGraph(raw: unknown): unknown {
@@ -107,14 +123,28 @@ function normalizeConceptGraph(raw: unknown): unknown {
   const concepts = data.concepts.map((c) => {
     if (!c || typeof c !== 'object') return c
     const concept = { ...(c as Record<string, unknown>) }
-    if (typeof concept.status === 'string') {
-      const key = concept.status.toLowerCase()
+    const statusBefore = concept.status
+    const difficultyBefore = concept.difficulty
+
+    // status may arrive as any-case string; coerce to lowercase key.
+    if (statusBefore != null) {
+      const key = String(statusBefore).toLowerCase()
       if (CONCEPT_STATUS_MAP[key]) concept.status = CONCEPT_STATUS_MAP[key]
     }
-    if (typeof concept.difficulty === 'string') {
-      const key = concept.difficulty.toLowerCase()
+
+    // difficulty may arrive as a number (1-5) OR a string ("easy"); String()
+    // handles both so numeric values resolve against the same map.
+    if (difficultyBefore != null) {
+      const key = String(difficultyBefore).toLowerCase()
       if (CONCEPT_DIFFICULTY_MAP[key]) concept.difficulty = CONCEPT_DIFFICULTY_MAP[key]
     }
+
+    console.log('[NORMALIZED SAMPLE]', {
+      statusBefore,
+      statusAfter: concept.status,
+      difficultyBefore,
+      difficultyAfter: concept.difficulty,
+    })
     return concept
   })
   return { ...data, concepts }
