@@ -124,7 +124,7 @@ export function KnowledgeGraphView() {
       })
     })
     return map
-  }, [])
+  }, [graphConcepts])
 
   const degree = useMemo(() => {
     const d: Record<string, number> = {}
@@ -133,7 +133,7 @@ export function KnowledgeGraphView() {
       d[e.target] = (d[e.target] ?? 0) + 1
     })
     return d
-  }, [])
+  }, [graphEdges])
 
   const visibleIds = useMemo(() => {
     const set = new Set<string>()
@@ -149,11 +149,11 @@ export function KnowledgeGraphView() {
       set.add(n.id)
     })
     return set
-  }, [showSubjects, showConcepts, showDocuments, recentOnly, difficulty])
+  }, [graphConcepts, showSubjects, showConcepts, showDocuments, recentOnly, difficulty])
 
   const visibleEdges = useMemo(
     () => graphEdges.filter((e) => visibleIds.has(e.source) && visibleIds.has(e.target)),
-    [visibleIds],
+    [graphEdges, visibleIds],
   )
 
   const connectedIds = useMemo(() => {
@@ -164,7 +164,7 @@ export function KnowledgeGraphView() {
       if (e.target === active) set.add(e.source)
     })
     return set
-  }, [active])
+  }, [active, graphEdges])
 
   const activeConcept = graphConcepts.find((c) => c.id === active) ?? null
 
@@ -179,7 +179,7 @@ export function KnowledgeGraphView() {
       })
       .filter((n) => n.node)
       .sort((a, b) => b.strength - a.strength)
-  }, [active])
+  }, [active, graphConcepts, graphEdges])
 
   // Statistics
   const stats = useMemo(() => {
@@ -187,7 +187,7 @@ export function KnowledgeGraphView() {
     const ranked = [...concepts].sort((a, b) => (degree[b.id] ?? 0) - (degree[a.id] ?? 0))
     const mastered = concepts.filter((c) => (c.mastery ?? 0) > 0)
     const weakest = [...mastered].sort((a, b) => (a.mastery ?? 0) - (b.mastery ?? 0))[0]
-    const avgDegree = (2 * graphEdges.length) / graphConcepts.length
+    const avgDegree = graphConcepts.length > 0 ? (2 * graphEdges.length) / graphConcepts.length : 0
     return {
       totalConcepts: concepts.length,
       totalConnections: graphEdges.length,
@@ -196,7 +196,7 @@ export function KnowledgeGraphView() {
       weakest,
       density: clamp(Math.round(avgDegree * 28), 0, 100),
     }
-  }, [degree])
+  }, [degree, graphConcepts, graphEdges])
 
   const hoveredNode = hovered ? graphConcepts.find((c) => c.id === hovered) : null
   const journeyNodes = conceptJourney
