@@ -1,66 +1,62 @@
 "use client"
 
 import { useState } from "react"
-import { Sparkles, FileText, Copy, Check, RefreshCw, ListTree, AlignLeft, Quote } from "lucide-react"
+import { Sparkles, Copy, Check, RefreshCw, AlignLeft, FileText } from "lucide-react"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { FileTypeIcon } from "@/components/dashboard/file-type-icon"
-import { documentService } from "@/lib/services"
+import type { Document } from "@/types"
 import { toast } from "sonner"
 
-const knowledgeItems = documentService.getDocuments()
+type Length = "short" | "medium" | "detailed"
 
-type Length = "brief" | "standard" | "detailed"
-
-const summaryBullets = [
-  "Gradient descent minimizes a loss function by iteratively moving parameters in the direction of steepest descent.",
-  "Batch GD uses the full dataset per step; stochastic GD uses one sample; mini-batch balances both for stability and speed.",
-  "Learning rate schedules (step decay, cosine annealing) prevent overshooting and help convergence near minima.",
-  "Momentum and Nesterov acceleration dampen oscillations in ravines, speeding up convergence.",
-  "Adaptive optimizers (Adam, RMSProp) adjust per-parameter learning rates using gradient history.",
-]
-
-export function SummaryCenterView() {
-  const [selectedDoc, setSelectedDoc] = useState(knowledgeItems[0].id)
-  const [length, setLength] = useState<Length>("standard")
+export function SummaryCenterView({ documents }: { documents: Document[] }) {
+  const [selectedDoc, setSelectedDoc] = useState(documents[0]?.id ?? "")
+  const [length, setLength] = useState<Length>("medium")
   const [loading, setLoading] = useState(false)
-  const [generated, setGenerated] = useState(true)
+  const [summary, setSummary] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  const doc = knowledgeItems.find((k) => k.id === selectedDoc)!
-  const bulletCount = length === "brief" ? 3 : length === "standard" ? 4 : 5
-  const keyTerms = ["Loss function", "Learning rate", "Momentum", "Adam", "Convergence", "Mini-batch"]
-  const overview = `This ${doc.type} introduces the foundations of optimization in machine learning, focusing on how models iteratively improve through gradient-based methods. It connects theory to practical training considerations.`
+  const doc = documents.find((d) => d.id === selectedDoc)
+  const hasDocuments = documents.length > 0
 
-  function generate() {
+  async function generate() {
+    if (!doc) return
     setLoading(true)
-    setGenerated(false)
-    setTimeout(() => {
-      setLoading(false)
-      setGenerated(true)
+    setError(null)
+    setSummary(null)
+    try {
+      const res = await fetch("/api/summaries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentId: doc.id, length }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        const message =
+          json?.error ?? json?.errors?.documentId?.[0] ?? "Failed to generate summary."
+        throw new Error(message)
+      }
+      setSummary(json.content ?? "")
       toast.success("Summary generated")
-    }, 1600)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Something went wrong."
+      setError(message)
+      toast.error(message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function copy() {
-    const text = [
-      `${doc.title} — AI Summary`,
-      "",
-      "Overview",
-      overview,
-      "",
-      "Key Points",
-      ...summaryBullets.slice(0, bulletCount).map((b) => `• ${b}`),
-      "",
-      `Key Terms: ${keyTerms.join(", ")}`,
-    ].join("\n")
-
+    if (!doc || !summary) return
+    const text = [`${doc.title} — AI Summary`, "", summary].join("\n")
     try {
       await navigator.clipboard.writeText(text)
       setCopied(true)
@@ -77,144 +73,156 @@ export function SummaryCenterView() {
         title="Summary Center"
         description="Turn any document into concise, structured summaries with AI."
       />
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Source</CardTitle>
-            <CardDescription>Choose a document to summarize</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <Select value={selectedDoc} onValueChange={(v) => v && setSelectedDoc(v)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {knowledgeItems.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.title}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
 
-            <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-3">
-              <FileTypeIcon type={doc.type} />
-              <div className="flex min-w-0 flex-col">
-                <span className="truncate text-sm font-medium">{doc.title}</span>
-                <span className="text-xs text-muted-foreground">
-                  {doc.subject} · {doc.size}
-                </span>
-              </div>
+      {!hasDocuments ? (
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+              <FileText className="size-6 text-muted-foreground" />
             </div>
-
-            <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Length</span>
-              <ToggleGroup
-                value={[length]}
-                onValueChange={(v) => v[0] && setLength(v[0] as Length)}
-                className="w-full"
-              >
-                <ToggleGroupItem value="brief" className="flex-1">
-                  Brief
-                </ToggleGroupItem>
-                <ToggleGroupItem value="standard" className="flex-1">
-                  Standard
-                </ToggleGroupItem>
-                <ToggleGroupItem value="detailed" className="flex-1">
-                  Detailed
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
-
-            <Button onClick={generate} disabled={loading}>
-              {loading ? (
-                <>
-                  <Spinner data-icon="inline-start" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles data-icon="inline-start" />
-                  Generate Summary
-                </>
-              )}
-            </Button>
+            <CardTitle className="text-lg">No documents yet</CardTitle>
+            <CardDescription className="max-w-sm">
+              Upload a document and let it finish processing. Once text has been extracted, you can
+              generate an AI summary here.
+            </CardDescription>
           </CardContent>
         </Card>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <CardTitle>Source</CardTitle>
+              <CardDescription>Choose a document to summarize</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <Select value={selectedDoc} onValueChange={(v) => v && setSelectedDoc(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a document" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {documents.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.title}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
 
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex-row items-center justify-between">
-            <div className="flex flex-col gap-1">
-              <CardTitle>AI Summary</CardTitle>
-              <CardDescription>{doc.title}</CardDescription>
-            </div>
-            {generated && !loading && (
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={copy}>
-                  {copied ? <Check data-icon="inline-start" /> : <Copy data-icon="inline-start" />}
-                  Copy
-                </Button>
-                <Button variant="outline" size="sm" onClick={generate}>
-                  <RefreshCw data-icon="inline-start" />
-                  Regenerate
-                </Button>
+              {doc && (
+                <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-3">
+                  <FileTypeIcon type={doc.type} />
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate text-sm font-medium">{doc.title}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {doc.subject} · {doc.size}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-2">
+                <span className="text-sm font-medium">Length</span>
+                <ToggleGroup
+                  value={[length]}
+                  onValueChange={(v) => v[0] && setLength(v[0] as Length)}
+                  className="w-full"
+                >
+                  <ToggleGroupItem value="short" className="flex-1">
+                    Brief
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="medium" className="flex-1">
+                    Standard
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="detailed" className="flex-1">
+                    Detailed
+                  </ToggleGroupItem>
+                </ToggleGroup>
               </div>
-            )}
-          </CardHeader>
-          <CardContent className="flex flex-col gap-6">
-            {loading ? (
-              <div className="flex flex-col gap-3">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-5/6" />
-                <Skeleton className="h-4 w-2/3" />
-                <Skeleton className="h-4 w-full" />
+
+              <Button onClick={generate} disabled={loading || !doc}>
+                {loading ? (
+                  <>
+                    <Spinner data-icon="inline-start" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles data-icon="inline-start" />
+                    Generate Summary
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="lg:col-span-2">
+            <CardHeader className="flex-row items-center justify-between">
+              <div className="flex flex-col gap-1">
+                <CardTitle>AI Summary</CardTitle>
+                <CardDescription>{doc?.title ?? "Select a document"}</CardDescription>
               </div>
-            ) : (
-              <>
+              {summary && !loading && (
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={copy}>
+                    {copied ? <Check data-icon="inline-start" /> : <Copy data-icon="inline-start" />}
+                    Copy
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={generate}>
+                    <RefreshCw data-icon="inline-start" />
+                    Regenerate
+                  </Button>
+                </div>
+              )}
+            </CardHeader>
+            <CardContent className="flex flex-col gap-6">
+              {loading ? (
+                <div className="flex flex-col gap-3">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-5/6" />
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center gap-3 py-12 text-center">
+                  <p className="text-sm text-destructive">{error}</p>
+                  <Button variant="outline" size="sm" onClick={generate}>
+                    <RefreshCw data-icon="inline-start" />
+                    Try again
+                  </Button>
+                </div>
+              ) : summary ? (
                 <section className="flex flex-col gap-3">
                   <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                     <AlignLeft className="size-4" />
-                    Overview
+                    Summary
                   </div>
-                  <p className="leading-relaxed text-pretty">{overview}</p>
-                </section>
-
-                <section className="flex flex-col gap-3">
-                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                    <ListTree className="size-4" />
-                    Key Points
-                  </div>
-                  <ul className="flex flex-col gap-2.5">
-                    {summaryBullets.slice(0, bulletCount).map((b, i) => (
-                      <li key={i} className="flex gap-3 text-sm leading-relaxed">
-                        <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
-                        <span>{b}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-
-                <section className="flex flex-col gap-3">
-                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                    <Quote className="size-4" />
-                    Key Terms
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {keyTerms.map((t) => (
-                      <Badge key={t} variant="secondary">
-                        {t}
-                      </Badge>
-                    ))}
+                  <div className="flex flex-col gap-3 leading-relaxed text-pretty">
+                    {summary
+                      .split(/\n{2,}/)
+                      .filter((p) => p.trim())
+                      .map((para, i) => (
+                        <p key={i}>{para.trim()}</p>
+                      ))}
                   </div>
                 </section>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3 py-12 text-center">
+                  <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+                    <Sparkles className="size-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Select a document and click Generate Summary to create an AI summary from its
+                    contents.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </>
   )
 }
