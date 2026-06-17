@@ -18,7 +18,10 @@ export class OpenAIProvider extends BaseAIProvider {
   constructor() {
     super(features.openai(), async () => {
       const { createOpenAI } = await import('@ai-sdk/openai')
-      const openai = createOpenAI({ apiKey: env.OPENAI_API_KEY })
+      const openai = createOpenAI({
+        apiKey: env.OPENAI_API_KEY,
+        baseURL: env.OPENAI_BASE_URL || undefined,
+      })
       return openai(AI_MODELS.openai)
     })
   }

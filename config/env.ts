@@ -31,6 +31,7 @@ export interface AppEnv {
   AI_PROVIDER?: string
   GOOGLE_GENERATIVE_AI_API_KEY?: string
   OPENAI_API_KEY?: string
+  OPENAI_BASE_URL?: string
   ANTHROPIC_API_KEY?: string
   // Persistence (Amazon DynamoDB)
   AWS_REGION?: string
@@ -57,6 +58,7 @@ export const env: AppEnv = {
   AI_PROVIDER: process.env.AI_PROVIDER,
   GOOGLE_GENERATIVE_AI_API_KEY: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+  OPENAI_BASE_URL: process.env.OPENAI_BASE_URL,
   ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
   AWS_REGION: process.env.AWS_REGION,
   AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
