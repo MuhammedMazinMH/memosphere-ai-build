@@ -43,7 +43,7 @@ export function SummaryCenterView({ documents }: { documents: Document[] }) {
           json?.error ?? json?.errors?.documentId?.[0] ?? "Failed to generate summary."
         throw new Error(message)
       }
-      setSummary(json.content ?? "")
+      setSummary(json.data?.content ?? "")
       toast.success("Summary generated")
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong."
