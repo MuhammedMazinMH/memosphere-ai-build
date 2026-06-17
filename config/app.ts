@@ -27,7 +27,7 @@ export const DEFAULT_AI_PROVIDER: AIProviderName = ((): AIProviderName => {
  */
 export const AI_MODELS: Record<AIProviderName, string> = {
   gemini: 'gemini-1.5-pro',
-  openai: 'gpt-4o',
+  openai: 'llama-3.3-70b-versatile',
   claude: 'claude-3-5-sonnet-20241022',
 }
 
