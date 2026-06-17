@@ -1,8 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { Sparkles, ListChecks, Lightbulb, FileText, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { FileText, Loader2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -23,28 +22,6 @@ const DocumentViewer = dynamic(
     ),
   },
 )
-
-function NotGeneratedYet({
-  icon,
-  message,
-  actionLabel,
-}: {
-  icon: React.ReactNode
-  message: string
-  actionLabel: string
-}) {
-  return (
-    <Card>
-      <CardContent className="flex flex-col items-center gap-4 p-10 text-center">
-        <span className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-          {icon}
-        </span>
-        <p className="max-w-sm text-sm text-muted-foreground">{message}</p>
-        <Button disabled>{actionLabel}</Button>
-      </CardContent>
-    </Card>
-  )
-}
 
 function extractionLabel(status: ExtractionStatus | undefined): string {
   switch (status) {
@@ -85,18 +62,6 @@ export function DocumentDetail({ item }: { item: Document }) {
         <TabsTrigger value="content">
           <FileText data-icon="inline-start" />
           Content
-        </TabsTrigger>
-        <TabsTrigger value="summary">
-          <Sparkles data-icon="inline-start" />
-          Summary
-        </TabsTrigger>
-        <TabsTrigger value="concepts">
-          <Lightbulb data-icon="inline-start" />
-          Concepts
-        </TabsTrigger>
-        <TabsTrigger value="quiz">
-          <ListChecks data-icon="inline-start" />
-          Quiz
         </TabsTrigger>
       </TabsList>
 
@@ -169,33 +134,6 @@ export function DocumentDetail({ item }: { item: Document }) {
             </CardContent>
           </Card>
         </div>
-      </TabsContent>
-
-      {/* Summary tab — no AI yet. */}
-      <TabsContent value="summary">
-        <NotGeneratedYet
-          icon={<Sparkles className="size-6" />}
-          message="AI summary not generated yet."
-          actionLabel="Generate Summary"
-        />
-      </TabsContent>
-
-      {/* Concepts tab — no AI yet. */}
-      <TabsContent value="concepts">
-        <NotGeneratedYet
-          icon={<Lightbulb className="size-6" />}
-          message="Concept extraction not generated yet."
-          actionLabel="Extract Concepts"
-        />
-      </TabsContent>
-
-      {/* Quiz tab — no AI yet. */}
-      <TabsContent value="quiz">
-        <NotGeneratedYet
-          icon={<ListChecks className="size-6" />}
-          message="Quiz generation not generated yet."
-          actionLabel="Generate Quiz"
-        />
       </TabsContent>
     </Tabs>
   )
