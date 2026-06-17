@@ -14,11 +14,22 @@ import { ok } from '@/lib/api/response'
 
 export async function GET() {
   const user = await authService.getCurrentUser()
+  console.log("[GRAPH AUTH]", {
+    userId: user?.id ?? null,
+    authenticated: !!user?.id,
+  })
   const userId = user.id ?? ''
 
   const documents = userId
     ? await documentService.listDocumentsByUser(userId)
     : []
+  console.log("[GRAPH DOCS]", {
+    count: documents.length,
+    docs: documents.map((d) => ({
+      title: d.title,
+      extractedTextLength: d.extractedText?.length ?? 0,
+    })),
+  })
 
   // Pass lightweight doc context to the provider — extractedText included.
   const docContexts = documents.map((d) => ({
@@ -37,6 +48,11 @@ export async function GET() {
   const journey: string[] = graph.concepts
     .filter((c: any) => c.group === 'subject')
     .map((c: any) => c.label as string)
+
+  console.log("[GRAPH RESPONSE]", {
+    conceptsCount: graph.concepts.length,
+    firstFiveConcepts: graph.concepts.slice(0, 5).map((c: any) => c.label),
+  })
 
   return ok({
     concepts: graph.concepts,
