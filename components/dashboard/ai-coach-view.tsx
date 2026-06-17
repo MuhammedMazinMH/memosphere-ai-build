@@ -1,3 +1,6 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import {
   Sparkles,
@@ -17,11 +20,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
-import { recommendationService } from "@/lib/services"
-import type { StudyPathStatus } from "@/types"
-
-const aiCoach = recommendationService.getRecommendations()
+import type { Recommendation, StudyPathStatus } from "@/types"
 
 const stepIcon: Record<StudyPathStatus, typeof CircleDot> = {
   done: CircleCheck,
@@ -31,6 +32,65 @@ const stepIcon: Record<StudyPathStatus, typeof CircleDot> = {
 }
 
 export function AICoachView() {
+  const [aiCoach, setAiCoach] = useState<Recommendation | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      try {
+        const res = await fetch("/api/recommendations")
+        const json = await res.json()
+        if (cancelled) return
+        if (!res.ok) {
+          setError(json.error ?? "Failed to load recommendations.")
+        } else {
+          setAiCoach(json.data ?? null)
+        }
+      } catch {
+        if (!cancelled) setError("Network error.")
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  if (loading) {
+    return (
+      <>
+        <PageHeader title="AI Learning Coach" description="Personalized recommendations generated from your knowledge graph and study history." />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className={i === 0 ? "lg:col-span-2" : ""}>
+              <CardContent className="flex flex-col gap-3 p-6">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-4 w-48" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </>
+    )
+  }
+
+  if (error || !aiCoach) {
+    return (
+      <>
+        <PageHeader title="AI Learning Coach" description="Personalized recommendations generated from your knowledge graph and study history." />
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+            <p className="text-sm font-medium text-destructive">{error ?? "No recommendations available."}</p>
+            <p className="text-xs text-muted-foreground">Upload and process documents to generate personalized coaching.</p>
+          </CardContent>
+        </Card>
+      </>
+    )
+  }
+
   const { nextTopic, weakAreas, knowledgeGaps, studyPath, examReadiness } = aiCoach
 
   return (

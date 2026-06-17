@@ -31,6 +31,16 @@ export interface SummaryRequest {
 export interface QuizRequest {
   subjectId: string
   count?: number
+  /** Merged extractedText from all documents in the subject — passed by the API route. */
+  content?: string
+}
+
+/** Lightweight doc shape passed into generation methods to avoid circular service imports. */
+export interface DocContext {
+  id?: string
+  title: string
+  subject: string
+  extractedText?: string
 }
 
 export interface KnowledgeGraph {

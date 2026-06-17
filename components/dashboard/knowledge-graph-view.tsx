@@ -23,12 +23,7 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
-import { knowledgeGraphService } from "@/lib/services"
-import type { Concept } from "@/types"
-
-const graphConcepts = knowledgeGraphService.getConcepts()
-const graphEdges = knowledgeGraphService.getConnections()
-const conceptJourney = knowledgeGraphService.getJourney()
+import type { Concept, ConceptConnection } from "@/types"
 
 const W = 820
 const H = 580
@@ -60,7 +55,13 @@ function nodeRadius(n: Concept) {
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
 
 export function KnowledgeGraphView() {
-  const [active, setActive] = useState<string | null>("ml")
+  // --- Real data from API ---
+  const [graphConcepts, setGraphConcepts] = useState<Concept[]>([])
+  const [graphEdges, setGraphEdges] = useState<ConceptConnection[]>([])
+  const [conceptJourney, setConceptJourney] = useState<string[]>([])
+  const [fetchError, setFetchError] = useState<string | null>(null)
+
+  const [active, setActive] = useState<string | null>(null)
   const [hovered, setHovered] = useState<string | null>(null)
   const [cursor, setCursor] = useState({ x: 0, y: 0 })
   const [view, setView] = useState<ViewState>({ scale: 1, x: 0, y: 0 })
@@ -78,8 +79,27 @@ export function KnowledgeGraphView() {
   const dragRef = useRef<{ x: number; y: number } | null>(null)
 
   useEffect(() => {
-    const t = setTimeout(() => setLoaded(true), 650)
-    return () => clearTimeout(t)
+    let cancelled = false
+    async function loadGraph() {
+      try {
+        const res = await fetch("/api/knowledge-graph")
+        const json = await res.json()
+        if (cancelled) return
+        if (!res.ok) {
+          setFetchError(json.error ?? "Failed to load knowledge graph.")
+        } else {
+          setGraphConcepts(json.data?.concepts ?? [])
+          setGraphEdges(json.data?.connections ?? [])
+          setConceptJourney(json.data?.journey ?? [])
+        }
+      } catch (e) {
+        if (!cancelled) setFetchError("Network error loading graph.")
+      } finally {
+        if (!cancelled) setLoaded(true)
+      }
+    }
+    loadGraph()
+    return () => { cancelled = true }
   }, [])
 
   // Clustered radial layout: subjects on inner ring, their concepts orbit around them.
@@ -330,6 +350,20 @@ export function KnowledgeGraphView() {
                     <Skeleton className="size-16 rounded-full" />
                     <Skeleton className="h-3 w-40" />
                     <span className="text-xs text-muted-foreground">Mapping your knowledge graph…</span>
+                  </div>
+                </div>
+              ) : fetchError ? (
+                <div className="flex h-[580px] w-full items-center justify-center">
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <span className="text-sm font-medium text-destructive">Failed to load graph</span>
+                    <span className="text-xs text-muted-foreground">{fetchError}</span>
+                  </div>
+                </div>
+              ) : graphConcepts.length === 0 ? (
+                <div className="flex h-[580px] w-full items-center justify-center">
+                  <div className="flex flex-col items-center gap-2 text-center text-muted-foreground">
+                    <span className="text-sm">No concepts yet.</span>
+                    <span className="text-xs">Upload and process documents to build your graph.</span>
                   </div>
                 </div>
               ) : (
