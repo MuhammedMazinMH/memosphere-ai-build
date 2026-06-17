@@ -330,6 +330,7 @@ export abstract class BaseAIProvider implements AIProvider {
         'and return them as graph nodes and edges.',
       `Analyze all the following documents and extract:\n- concepts (with id, label, group, mastery, importance, status, difficulty)\n- connections between concepts (source, target, strength 0-100)\n\nCreate subject nodes (group=subject) for each document subject, document nodes (group=document) for each document, and concept nodes (group=concept or core) for extracted concepts.\n\nReturn JSON of the form {"concepts":[...],"connections":[{"source":"id","target":"id","strength":0}]}.\n\nDocuments:\n${truncate(combined, 14000)}`,
     )
+
     if (!output) {
       return {
         concepts: conceptRepository.findAllConcepts(),
