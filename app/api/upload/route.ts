@@ -7,7 +7,7 @@
  */
 import { auth } from '@clerk/nextjs/server'
 import { s3Service } from '@/lib/services/s3-service'
-import { documentService, subjectService } from '@/lib/services'
+import { documentService } from '@/lib/services'
 import { processingService } from '@/lib/services/processing/processing-service'
 import { ok, badRequest, unauthorized, serverError } from '@/lib/api/response'
 
@@ -34,16 +34,12 @@ export async function POST(request: Request) {
     return badRequest({ error: 'No file provided' })
   }
 
-  // Validate subjectId (optional; fall back to default subject)
-  const subjectId = subjectIdStr || 'default'
-  let subject = subjectId
-  try {
-    const subjects = subjectService.getSubjects()
-    const found = subjects.find((s) => s.id === subjectId)
-    if (found) subject = found.name
-  } catch {
-    // Fall back to using the subject ID as the name
-  }
+  // Resolve subject from user-entered text. The upload dialog sends the raw
+  // subject name the user typed. Store it directly; if blank, group the
+  // document under "Uncategorized". Both subject and subjectId hold the same
+  // normalized string so derived-subject grouping stays consistent.
+  const subject = subjectIdStr?.trim() || 'Uncategorized'
+  const subjectId = subject
 
   try {
     // Upload file to S3
