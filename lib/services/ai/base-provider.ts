@@ -255,10 +255,28 @@ export abstract class BaseAIProvider implements AIProvider {
         prompt,
       })
       const parsed = JSON.parse(extractJson(text))
-      const normalized = preprocess ? preprocess(parsed) : parsed
+      console.log("[RAW PARSED JSON]", JSON.stringify(parsed).slice(0, 2000))
+      console.log("[PREPROCESS EXISTS]", !!preprocess)
+      let normalized: unknown
+      if (preprocess) {
+        console.log("[PREPROCESS BEFORE]", JSON.stringify(parsed).slice(0, 2000))
+        normalized = preprocess(parsed)
+        console.log("[PREPROCESS AFTER]", JSON.stringify(normalized).slice(0, 2000))
+      } else {
+        normalized = parsed
+      }
+      // Surface the exact enum values the model emitted for the failing fields.
+      const rawConcepts = (parsed as any)?.concepts
+      if (Array.isArray(rawConcepts)) {
+        console.log("[MODEL STATUS VALUES]", [...new Set(rawConcepts.map((c: any) => c?.status))])
+        console.log("[MODEL DIFFICULTY VALUES]", [...new Set(rawConcepts.map((c: any) => c?.difficulty))])
+        console.log("[MODEL GROUP VALUES]", [...new Set(rawConcepts.map((c: any) => c?.group))])
+      }
+      console.log("[VALIDATING]", JSON.stringify(normalized).slice(0, 2000))
       const result = schema.safeParse(normalized)
       if (!result.success) {
         console.log('[v0] AI JSON failed schema validation:', result.error.message)
+        console.log('[ZOD ISSUES]', JSON.stringify(result.error.issues, null, 2))
         return null
       }
       return result.data
