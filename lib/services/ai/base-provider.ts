@@ -78,6 +78,48 @@ const conceptsSchema = z.object({
   ),
 })
 
+// Map loose / synonym values the model frequently emits onto the strict enums
+// defined in conceptsSchema. Unknown values are left untouched so Zod's
+// `.default()` still applies when the value is absent.
+const CONCEPT_STATUS_MAP: Record<string, 'core' | 'emerging' | 'weak' | 'connected'> = {
+  important: 'core',
+  mastered: 'connected',
+  strong: 'connected',
+  medium: 'emerging',
+  learning: 'emerging',
+  weakness: 'weak',
+  needs_improvement: 'weak',
+}
+
+const CONCEPT_DIFFICULTY_MAP: Record<string, 'foundational' | 'intermediate' | 'advanced'> = {
+  easy: 'foundational',
+  beginner: 'foundational',
+  medium: 'intermediate',
+  moderate: 'intermediate',
+  hard: 'advanced',
+  expert: 'advanced',
+}
+
+function normalizeConceptGraph(raw: unknown): unknown {
+  if (!raw || typeof raw !== 'object') return raw
+  const data = raw as { concepts?: unknown }
+  if (!Array.isArray(data.concepts)) return raw
+  const concepts = data.concepts.map((c) => {
+    if (!c || typeof c !== 'object') return c
+    const concept = { ...(c as Record<string, unknown>) }
+    if (typeof concept.status === 'string') {
+      const key = concept.status.toLowerCase()
+      if (CONCEPT_STATUS_MAP[key]) concept.status = CONCEPT_STATUS_MAP[key]
+    }
+    if (typeof concept.difficulty === 'string') {
+      const key = concept.difficulty.toLowerCase()
+      if (CONCEPT_DIFFICULTY_MAP[key]) concept.difficulty = CONCEPT_DIFFICULTY_MAP[key]
+    }
+    return concept
+  })
+  return { ...data, concepts }
+}
+
 const recommendationSchema = z.object({
   nextTopic: z.object({
     mastered: z.string(),
@@ -202,6 +244,7 @@ export abstract class BaseAIProvider implements AIProvider {
     schema: z.ZodType<T>,
     system: string,
     prompt: string,
+    preprocess?: (raw: unknown) => unknown,
   ): Promise<T | null> {
     try {
       const { generateText } = await import('ai')
@@ -212,7 +255,8 @@ export abstract class BaseAIProvider implements AIProvider {
         prompt,
       })
       const parsed = JSON.parse(extractJson(text))
-      const result = schema.safeParse(parsed)
+      const normalized = preprocess ? preprocess(parsed) : parsed
+      const result = schema.safeParse(normalized)
       if (!result.success) {
         console.log('[v0] AI JSON failed schema validation:', result.error.message)
         return null
@@ -329,6 +373,7 @@ export abstract class BaseAIProvider implements AIProvider {
       'You are a knowledge graph builder. Extract concepts and relationships from study materials ' +
         'and return them as graph nodes and edges.',
       `Analyze all the following documents and extract:\n- concepts (with id, label, group, mastery, importance, status, difficulty)\n- connections between concepts (source, target, strength 0-100)\n\nCreate subject nodes (group=subject) for each document subject, document nodes (group=document) for each document, and concept nodes (group=concept or core) for extracted concepts.\n\nReturn JSON of the form {"concepts":[...],"connections":[{"source":"id","target":"id","strength":0}]}.\n\nDocuments:\n${truncate(combined, 14000)}`,
+      normalizeConceptGraph,
     )
 
     if (!output) {
@@ -339,6 +384,9 @@ export abstract class BaseAIProvider implements AIProvider {
     }
 
     const concepts = output.concepts as unknown as Concept[]
+    console.log('[GRAPH NORMALIZED]', {
+      conceptsCount: concepts.length,
+    })
     const connections = output.connections.map((c) => ({
       source: c.source,
       target: c.target,
