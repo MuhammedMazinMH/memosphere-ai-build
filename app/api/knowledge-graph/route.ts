@@ -43,6 +43,10 @@ export async function GET() {
 
   // Use the real generation path which accepts document contexts.
   const graph = await (provider as any).generateKnowledgeGraph(userId, docContexts)
+  console.log("[ROUTE RECEIVED GRAPH]", {
+    conceptsCount: graph.concepts?.length ?? 0,
+    firstFive: graph.concepts?.slice(0, 5).map((c: any) => c.label),
+  })
 
   // Derive journey from subject nodes in the generated graph.
   const journey: string[] = graph.concepts
@@ -54,9 +58,14 @@ export async function GET() {
     firstFiveConcepts: graph.concepts.slice(0, 5).map((c: any) => c.label),
   })
 
-  return ok({
+  const response = ok({
     concepts: graph.concepts,
     connections: graph.connections,
     journey,
   })
+  console.log("[ROUTE SENDING GRAPH]", {
+    conceptsCount: graph.concepts?.length ?? 0,
+    firstFive: graph.concepts?.slice(0, 5).map((c: any) => c.label),
+  })
+  return response
 }

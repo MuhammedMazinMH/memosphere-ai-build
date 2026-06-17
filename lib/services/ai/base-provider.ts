@@ -356,8 +356,14 @@ export abstract class BaseAIProvider implements AIProvider {
     documents?: Array<{ id: string; title: string; subject: string; extractedText?: string }>,
   ): Promise<KnowledgeGraph> {
     if (!this.isLive || !documents?.length) {
+      const concepts = conceptRepository.findAllConcepts()
+      console.log("[GRAPH FALLBACK RETURNED]", {
+        reason: "fallback",
+        conceptsCount: concepts.length,
+        firstFive: concepts.slice(0, 5).map(c => c.label),
+      })
       return {
-        concepts: conceptRepository.findAllConcepts(),
+        concepts,
         connections: conceptRepository.findAllConnections(),
       }
     }
@@ -377,8 +383,14 @@ export abstract class BaseAIProvider implements AIProvider {
     )
 
     if (!output) {
+      const concepts = conceptRepository.findAllConcepts()
+      console.log("[GRAPH FALLBACK RETURNED]", {
+        reason: "fallback",
+        conceptsCount: concepts.length,
+        firstFive: concepts.slice(0, 5).map(c => c.label),
+      })
       return {
-        concepts: conceptRepository.findAllConcepts(),
+        concepts,
         connections: conceptRepository.findAllConnections(),
       }
     }
@@ -393,7 +405,12 @@ export abstract class BaseAIProvider implements AIProvider {
       strength: c.strength,
     }))
 
-    return { concepts, connections }
+    const result = { concepts, connections }
+    console.log("[GRAPH FINAL RESULT]", {
+      conceptsCount: result.concepts?.length ?? 0,
+      firstFive: result.concepts?.slice(0, 5).map(c => c.label),
+    })
+    return result
   }
 
   // -------------------------------------------------------------------------
