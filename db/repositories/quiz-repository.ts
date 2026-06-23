@@ -6,7 +6,6 @@
  * methods serve demo data; async methods persist/read live data.
  */
 import {
-  getMockTables,
   isDatabaseConnected,
   putItem,
   queryByPartition,
@@ -25,7 +24,7 @@ export interface QuizAttempt {
 
 export const quizRepository = {
   findQuestions(): QuizQuestion[] {
-    return getMockTables().quizQuestions
+    return []
   },
 
   /** Records a quiz attempt in DynamoDB (no-op in demo mode). */

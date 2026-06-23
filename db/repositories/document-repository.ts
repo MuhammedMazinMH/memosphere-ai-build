@@ -7,7 +7,6 @@
  * when a live database is configured.
  */
 import {
-  getMockTables,
   isDatabaseConnected,
   scanAll,
   getItem,

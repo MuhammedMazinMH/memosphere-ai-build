@@ -1,41 +1,41 @@
 /**
  * Subject repository — Amazon DynamoDB.
  *
- * Repositories own all data access. Synchronous methods serve the in-memory
- * demo data so module-level callers keep working with no AWS account. The
- * async `*FromDb` methods read from DynamoDB (table: `subjects`) when a live
- * database is configured, falling back to the demo data otherwise.
+ * Repositories own all data access. There is NO mock/seed data: synchronous
+ * methods return empty/zero values so unwired callers render clean empty
+ * states. The async `*FromDb` methods read from DynamoDB (table: `subjects`)
+ * and fall back to the same empty values on absence/error.
  *
  * DynamoDB access goes exclusively through the parameterized helpers in
  * db/client.ts (scan/get/query) — no hand-built commands here.
  */
-import { getMockTables, isDatabaseConnected, scanAll, getItem, buildKey } from '@/db/client'
+import { isDatabaseConnected, scanAll, getItem, buildKey } from '@/db/client'
 import type { Subject } from '@/types'
 
 export const subjectRepository = {
-  /** Demo/sync read of all subjects. */
+  /** Sync read of all subjects (empty until wired to a live source). */
   findAll(): Subject[] {
-    return getMockTables().subjects
+    return []
   },
 
-  /** Demo/sync read of a single subject by id. */
-  findById(id: string): Subject | undefined {
-    return getMockTables().subjects.find((s) => s.id === id)
+  /** Sync read of a single subject by id (none until wired). */
+  findById(_id: string): Subject | undefined {
+    return undefined
   },
 
   count(): number {
-    return getMockTables().subjects.length
+    return 0
   },
 
-  /** Live read of all subjects from DynamoDB (Scan), with demo fallback. */
+  /** Live read of all subjects from DynamoDB (Scan); empty otherwise. */
   async findAllFromDb(): Promise<Subject[]> {
-    if (!isDatabaseConnected()) return this.findAll()
+    if (!isDatabaseConnected()) return []
     return scanAll<Subject>('subjects')
   },
 
-  /** Live read of a single subject from DynamoDB (GetItem), with demo fallback. */
+  /** Live read of a single subject from DynamoDB (GetItem); undefined otherwise. */
   async findByIdFromDb(id: string): Promise<Subject | undefined> {
-    if (!isDatabaseConnected()) return this.findById(id)
+    if (!isDatabaseConnected()) return undefined
     return getItem<Subject>('subjects', buildKey('subjects', id))
   },
 }
