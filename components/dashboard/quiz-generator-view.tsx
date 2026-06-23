@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import {
   ListChecks,
   Sparkles,
@@ -33,6 +34,7 @@ type Stage = "setup" | "loading" | "active" | "result"
 const difficulties = ["Easy", "Medium", "Hard", "Mixed"] as const
 
 export function QuizGeneratorView({ subjects }: Props) {
+  const router = useRouter()
   const hasSubjects = subjects.length > 0
   const defaultSubject = subjects[0]?.id ?? ""
 
@@ -104,11 +106,28 @@ export function QuizGeneratorView({ subjects }: Props) {
   function next() {
     if (current + 1 >= total) {
       setStage("result")
+      void finishQuiz()
       return
     }
     setCurrent((c) => c + 1)
     setSelected(null)
     setRevealed(false)
+  }
+
+  // Persist the completed attempt so it feeds deterministic exam-readiness
+  // metrics, then refresh server data so dependent pages reflect the result.
+  // Best-effort — a persistence failure must not disrupt the results screen.
+  async function finishQuiz() {
+    try {
+      await fetch("/api/quizzes", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subjectId: subject, score, total }),
+      })
+      router.refresh()
+    } catch {
+      // Non-critical — the user still sees their results.
+    }
   }
 
   function restart() {

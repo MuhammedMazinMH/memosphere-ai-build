@@ -3,33 +3,30 @@
  *
  * GET: Loads the authenticated user's documents, passes them (with
  * extractedText) to the AI provider for concept and relationship extraction,
- * and returns the resulting graph. Falls back to stored concepts when the
- * provider is not live.
+ * and returns the resulting graph.
+ *
+ * Fallback policy (NO seed data):
+ * - A successful, non-empty generation is persisted as the user's "last-good"
+ *   snapshot and returned.
+ * - When generation yields nothing (AI unavailable, no documents, or a
+ *   transient failure), the user's last-good snapshot is returned if one
+ *   exists; otherwise an empty graph.
  */
 import { authService } from '@/lib/services/auth/auth-service.server'
 import { documentService } from '@/lib/services/documents/document-service'
-import { knowledgeGraphService } from '@/lib/services'
 import { getAIProvider } from '@/lib/services/ai'
+import { knowledgeGraphRepository } from '@/db/repositories/knowledge-graph-repository'
+import { notificationRepository } from '@/db/repositories/notification-repository'
 import { ok } from '@/lib/api/response'
+import type { Concept, ConceptConnection } from '@/types'
 
 export async function GET() {
   const user = await authService.getCurrentUser()
-  console.log("[GRAPH AUTH]", {
-    userId: user?.id ?? null,
-    authenticated: !!user?.id,
-  })
   const userId = user.id ?? ''
 
   const documents = userId
     ? await documentService.listDocumentsByUser(userId)
     : []
-  console.log("[GRAPH DOCS]", {
-    count: documents.length,
-    docs: documents.map((d) => ({
-      title: d.title,
-      extractedTextLength: d.extractedText?.length ?? 0,
-    })),
-  })
 
   // Pass lightweight doc context to the provider — extractedText included.
   const docContexts = documents.map((d) => ({
@@ -40,32 +37,46 @@ export async function GET() {
   }))
 
   const provider = getAIProvider()
+  const graph = await provider.generateKnowledgeGraph(userId, docContexts)
 
-  // Use the real generation path which accepts document contexts.
-  const graph = await (provider as any).generateKnowledgeGraph(userId, docContexts)
-  console.log("[ROUTE RECEIVED GRAPH]", {
-    conceptsCount: graph.concepts?.length ?? 0,
-    firstFive: graph.concepts?.slice(0, 5).map((c: any) => c.label),
-  })
+  let concepts: Concept[] = graph.concepts ?? []
+  let connections: ConceptConnection[] = graph.connections ?? []
 
-  // Derive journey from subject nodes in the generated graph.
-  const journey: string[] = graph.concepts
-    .filter((c: any) => c.group === 'subject')
-    .map((c: any) => c.label as string)
+  if (concepts.length > 0) {
+    // Compare against the previous snapshot so we only notify when the graph
+    // meaningfully changes — otherwise every visit to the page would spam a
+    // notification (the graph is regenerated on each GET).
+    const previous = await knowledgeGraphRepository.loadSnapshot(userId)
+    const changed = !previous || previous.concepts.length !== concepts.length
 
-  console.log("[GRAPH RESPONSE]", {
-    conceptsCount: graph.concepts.length,
-    firstFiveConcepts: graph.concepts.slice(0, 5).map((c: any) => c.label),
-  })
+    // Fresh, real graph: persist it as the last-good snapshot.
+    await knowledgeGraphRepository.saveSnapshot(userId, { concepts, connections })
 
-  const response = ok({
-    concepts: graph.concepts,
-    connections: graph.connections,
-    journey,
-  })
-  console.log("[ROUTE SENDING GRAPH]", {
-    conceptsCount: graph.concepts?.length ?? 0,
-    firstFive: graph.concepts?.slice(0, 5).map((c: any) => c.label),
-  })
-  return response
+    if (changed) {
+      try {
+        await notificationRepository.create({
+          userId,
+          title: 'Knowledge graph updated',
+          message: `Your knowledge graph now maps ${concepts.length} concepts from your documents.`,
+          type: 'graph_generated',
+        })
+      } catch {
+        // Non-critical — never fail the graph response over a notification.
+      }
+    }
+  } else {
+    // Nothing generated this run → fall back to the last-good snapshot.
+    const snapshot = await knowledgeGraphRepository.loadSnapshot(userId)
+    if (snapshot) {
+      concepts = snapshot.concepts
+      connections = snapshot.connections
+    }
+  }
+
+  // Derive journey from subject nodes in the resolved graph.
+  const journey: string[] = concepts
+    .filter((c) => c.group === 'subject')
+    .map((c) => c.label)
+
+  return ok({ concepts, connections, journey })
 }

@@ -9,6 +9,7 @@ import { auth } from '@clerk/nextjs/server'
 import { s3Service } from '@/lib/services/s3-service'
 import { documentService } from '@/lib/services'
 import { processingService } from '@/lib/services/processing/processing-service'
+import { notificationRepository } from '@/db/repositories/notification-repository'
 import { ok, badRequest, unauthorized, serverError } from '@/lib/api/response'
 
 export async function POST(request: Request) {
@@ -104,6 +105,19 @@ export async function POST(request: Request) {
     document.extractedAt = Date.now()
     if (processing.stats) {
       document.stats = processing.stats
+    }
+
+    // Emit a persisted notification for the completed upload. Best-effort —
+    // a notification failure must never fail the upload itself.
+    try {
+      await notificationRepository.create({
+        userId: user.userId,
+        title: 'Document uploaded',
+        message: `"${document.title}" was added to your knowledge base.`,
+        type: 'document_uploaded',
+      })
+    } catch {
+      // Non-critical.
     }
 
     return ok({ document, processing }, { status: 201 })

@@ -28,6 +28,7 @@ import { documentRepository } from '@/db/repositories/document-repository'
 import { analyticsRepository } from '@/db/repositories/analytics-repository'
 import type {
   AIProvider,
+  DocContext,
   KnowledgeGraph,
   QuizRequest,
   SummaryRequest,
@@ -134,7 +135,6 @@ function normalizeDifficultyValue(
 }
 
 function normalizeConceptGraph(raw: unknown): unknown {
-  console.log("[NORMALIZER EXECUTED]")
   if (!raw || typeof raw !== 'object') return raw
   const data = raw as { concepts?: unknown }
   if (!Array.isArray(data.concepts)) return raw
@@ -157,22 +157,8 @@ function normalizeConceptGraph(raw: unknown): unknown {
       if (mapped) concept.difficulty = mapped
     }
 
-    console.log('[NORMALIZED SAMPLE]', {
-      statusBefore,
-      statusAfter: concept.status,
-      difficultyBefore,
-      difficultyAfter: concept.difficulty,
-    })
     return concept
   })
-
-  // Verify post-normalization that only strict enum values remain.
-  console.log('[MODEL STATUS VALUES]', [
-    ...new Set(concepts.map((c) => (c as Record<string, unknown>)?.status)),
-  ])
-  console.log('[MODEL DIFFICULTY VALUES]', [
-    ...new Set(concepts.map((c) => (c as Record<string, unknown>)?.difficulty)),
-  ])
 
   return { ...data, concepts }
 }
@@ -306,47 +292,21 @@ export abstract class BaseAIProvider implements AIProvider {
     try {
       const { generateText } = await import('ai')
       const model = await this.getModel()
-      console.log("[AI CALL]", {
-        provider: this.name,
-        modelId: (model as any)?.modelId ?? (model as any)?.id ?? String(model),
-        promptLength: prompt.length,
-      })
       const { text } = await generateText({
         model,
         system: `${system}\n\nRespond with ONLY valid JSON. Do not include markdown code fences, comments, or any prose outside the JSON.`,
         prompt,
       })
-      console.log("[AI RAW RESPONSE]", { rawResponseLength: text?.length ?? 0 })
       const parsed = JSON.parse(extractJson(text))
-      console.log("[RAW PARSED JSON]", JSON.stringify(parsed).slice(0, 2000))
-      console.log("[PREPROCESS EXISTS]", !!preprocess)
-      let normalized: unknown
-      if (preprocess) {
-        console.log("[PREPROCESS BEFORE]", JSON.stringify(parsed).slice(0, 2000))
-        normalized = preprocess(parsed)
-        console.log("[PREPROCESS AFTER]", JSON.stringify(normalized).slice(0, 2000))
-      } else {
-        normalized = parsed
-      }
-      // Surface the exact enum values the model emitted for the failing fields.
-      const rawConcepts = (parsed as any)?.concepts
-      if (Array.isArray(rawConcepts)) {
-        console.log("[MODEL STATUS VALUES]", [...new Set(rawConcepts.map((c: any) => c?.status))])
-        console.log("[MODEL DIFFICULTY VALUES]", [...new Set(rawConcepts.map((c: any) => c?.difficulty))])
-        console.log("[MODEL GROUP VALUES]", [...new Set(rawConcepts.map((c: any) => c?.group))])
-      }
-      console.log("[VALIDATING]", JSON.stringify(normalized).slice(0, 2000))
+      const normalized = preprocess ? preprocess(parsed) : parsed
       const result = schema.safeParse(normalized)
       if (!result.success) {
-        console.log('[v0] AI JSON failed schema validation:', result.error.message)
-        console.log('[ZOD ISSUES]', JSON.stringify(result.error.issues, null, 2))
-        console.log('[FIRST ZOD ISSUE]', result.error?.issues?.[0])
+        console.error('[v0] AI JSON failed schema validation:', result.error.message)
         return null
       }
-      console.log("[ZOD VALIDATION SUCCESS]")
       return result.data
     } catch (err) {
-      console.log('[AI JSON GENERATION ERROR]', err instanceof Error ? err.message : String(err))
+      console.error('[v0] AI JSON generation error:', err instanceof Error ? err.message : String(err))
       return null
     }
   }
@@ -436,28 +396,12 @@ export abstract class BaseAIProvider implements AIProvider {
   // -------------------------------------------------------------------------
   async generateKnowledgeGraph(
     _userId: string,
-    documents?: Array<{ id: string; title: string; subject: string; extractedText?: string }>,
+    documents?: DocContext[],
   ): Promise<KnowledgeGraph> {
-    console.log("[GRAPH ENTRY]", {
-      isLive: this.isLive,
-      provider: this.name,
-      documentsLength: documents?.length ?? 0,
-      firstDocTitle: documents?.[0]?.title ?? null,
-      firstDocTextLength: documents?.[0]?.extractedText?.length ?? 0,
-      fallbackGuardTriggers: !this.isLive || !documents?.length,
-    })
-
+    // No live AI or no documents → empty graph. There is no mock/seed graph;
+    // the route layer handles falling back to the user's last-good snapshot.
     if (!this.isLive || !documents?.length) {
-      const concepts = conceptRepository.findAllConcepts()
-      console.log("[RETURNING_FALLBACK_GRAPH]", {
-        reason: !this.isLive ? "isLive=false" : "documents.length=0",
-        conceptsCount: concepts.length,
-        firstFive: concepts.slice(0, 5).map(c => c.label),
-      })
-      return {
-        concepts,
-        connections: conceptRepository.findAllConnections(),
-      }
+      return { concepts: [], connections: [] }
     }
 
     // Build a condensed context from all documents (trim per-doc to fit)
@@ -474,39 +418,20 @@ export abstract class BaseAIProvider implements AIProvider {
       normalizeConceptGraph,
     )
 
-    console.log("[RAW AI GRAPH]", JSON.stringify(output, null, 2))
-
+    // Generation failed (request, parse, or validation) → empty graph; the
+    // route falls back to the last-good snapshot. Never seed data.
     if (!output) {
-      const concepts = conceptRepository.findAllConcepts()
-      console.log("[RETURNING_FALLBACK_GRAPH]", {
-        reason: "output=null (AI request, parser, or zod validation failed)",
-        conceptsCount: concepts.length,
-        firstFive: concepts.slice(0, 5).map(c => c.label),
-      })
-      return {
-        concepts,
-        connections: conceptRepository.findAllConnections(),
-      }
+      return { concepts: [], connections: [] }
     }
 
     const concepts = output.concepts as unknown as Concept[]
-    console.log("[NORMALIZED GRAPH]", JSON.stringify({ concepts, connections: output.connections }, null, 2))
-    console.log('[GRAPH NORMALIZED]', {
-      conceptsCount: concepts.length,
-    })
     const connections = output.connections.map((c) => ({
       source: c.source,
       target: c.target,
       strength: c.strength,
     }))
 
-    const result = { concepts, connections }
-    console.log("[RETURNING_AI_GRAPH]", {
-      conceptsCount: result.concepts?.length ?? 0,
-      connectionsCount: result.connections?.length ?? 0,
-      firstFive: result.concepts?.slice(0, 5).map(c => c.label),
-    })
-    return result
+    return { concepts, connections }
   }
 
   // -------------------------------------------------------------------------

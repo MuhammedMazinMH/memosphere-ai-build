@@ -60,5 +60,8 @@ export interface AIProvider {
   generateRecommendations(userId: string): Promise<Recommendation>
   detectLearningGaps(userId: string): Promise<GapTopic[]>
   calculateExamReadiness(userId: string): Promise<ExamReadiness[]>
-  generateKnowledgeGraph(userId: string): Promise<KnowledgeGraph>
+  generateKnowledgeGraph(
+    userId: string,
+    documents?: DocContext[],
+  ): Promise<KnowledgeGraph>
 }

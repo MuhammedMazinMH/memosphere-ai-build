@@ -27,6 +27,9 @@ export type NotificationType =
   | 'profile_updated'
   | 'study_goal_updated'
   | 'feature_announcement'
+  | 'document_uploaded'
+  | 'graph_generated'
+  | 'quiz_completed'
 
 /** A single notification belonging to a user. */
 export interface Notification {

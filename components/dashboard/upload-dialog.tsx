@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,7 @@ export function UploadDialog({
   trigger: React.ReactNode
   onUploadComplete?: () => void
 }) {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [stage, setStage] = useState<"idle" | "uploading" | "done" | "error">("idle")
   const [progress, setProgress] = useState(0)
@@ -99,8 +101,12 @@ export function UploadDialog({
       setStage("done")
 
       toast.success("Document uploaded successfully")
-      
-      // Call callback to refresh the library
+
+      // Refresh server-rendered data so every dependent page (dashboard,
+      // knowledge graph, gaps, readiness, coach) reflects the new document.
+      router.refresh()
+
+      // Call callback to refresh the library list locally.
       onUploadComplete?.()
 
       // Close after delay
