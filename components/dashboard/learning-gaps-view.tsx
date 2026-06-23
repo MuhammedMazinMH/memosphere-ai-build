@@ -8,10 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { learningGapService } from "@/lib/services"
 import type { GapTopic } from "@/types"
-
-const learningGaps = learningGapService.getGaps()
 
 type StatusKey = GapTopic["status"]
 
@@ -46,20 +43,20 @@ const filters: { key: "all" | StatusKey; label: string }[] = [
   { key: "mastered", label: "Mastered" },
 ]
 
-export function LearningGapsView() {
+export function LearningGapsView({ gaps = [] }: { gaps?: GapTopic[] }) {
   const [filter, setFilter] = useState<"all" | StatusKey>("all")
 
   const counts = useMemo(() => {
     return {
-      mastered: learningGaps.filter((g) => g.status === "mastered").length,
-      partial: learningGaps.filter((g) => g.status === "partial").length,
-      missing: learningGaps.filter((g) => g.status === "missing").length,
+      mastered: gaps.filter((g) => g.status === "mastered").length,
+      partial: gaps.filter((g) => g.status === "partial").length,
+      missing: gaps.filter((g) => g.status === "missing").length,
     }
-  }, [])
+  }, [gaps])
 
   const filtered = useMemo(
-    () => (filter === "all" ? learningGaps : learningGaps.filter((g) => g.status === filter)),
-    [filter],
+    () => (filter === "all" ? gaps : gaps.filter((g) => g.status === filter)),
+    [filter, gaps],
   )
 
   return (
@@ -107,7 +104,17 @@ export function LearningGapsView() {
           </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
-          {filtered.map((topic) => {
+          {gaps.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed py-12 text-center">
+              <AlertCircle className="size-8 text-muted-foreground" />
+              <p className="font-medium">No tracked topics yet</p>
+              <p className="max-w-sm text-sm text-muted-foreground text-pretty">
+                Upload documents and generate your knowledge graph to start
+                tracking mastery and surfacing learning gaps.
+              </p>
+            </div>
+          ) : (
+            filtered.map((topic) => {
             const meta = statusMeta[topic.status]
             return (
               <div
@@ -131,8 +138,9 @@ export function LearningGapsView() {
                   </Badge>
                 </div>
               </div>
-            )
-          })}
+              )
+            })
+          )}
         </CardContent>
       </Card>
     </>

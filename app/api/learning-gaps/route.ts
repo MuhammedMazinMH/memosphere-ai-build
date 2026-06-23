@@ -1,31 +1,16 @@
 /**
- * Learning gaps API — real document data.
+ * Learning gaps API — real, deterministic data.
  *
- * GET: Detects gaps from the authenticated user's real uploaded documents
- * via the AI provider. Falls back to stored analytics when the provider is
- * not live or the user has no documents.
+ * GET: Computes the authenticated user's learning gaps deterministically from
+ * their real concepts (no AI, no mock). Returns an empty array when the user
+ * has no tracked concepts yet.
  */
 import { authService } from '@/lib/services/auth/auth-service.server'
-import { documentService } from '@/lib/services/documents/document-service'
-import { getAIProvider } from '@/lib/services/ai'
+import { learningGapService } from '@/lib/services'
 import { ok } from '@/lib/api/response'
 
 export async function GET() {
   const user = await authService.getCurrentUser()
-  const userId = user.id ?? ''
-
-  const documents = userId
-    ? await documentService.listDocumentsByUser(userId)
-    : []
-
-  const docContexts = documents.map((d) => ({
-    title: d.title,
-    subject: d.subject ?? d.subjectId,
-    extractedText: d.extractedText,
-  }))
-
-  const provider = getAIProvider()
-  const gaps = await (provider as any).detectLearningGaps(userId, docContexts)
-
+  const gaps = await learningGapService.computeForUser(user.id ?? '')
   return ok(gaps)
 }

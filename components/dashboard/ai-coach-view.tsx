@@ -77,14 +77,26 @@ export function AICoachView() {
     )
   }
 
-  if (error || !aiCoach) {
+  // An empty recommendation (no tracked concepts yet) has no recommended topic
+  // and no weak areas — treat that as the empty state rather than rendering
+  // blank cards.
+  const hasContent =
+    !!aiCoach &&
+    (aiCoach.nextTopic.recommended !== "" ||
+      aiCoach.weakAreas.length > 0 ||
+      aiCoach.studyPath.length > 0)
+
+  if (error || !hasContent) {
     return (
       <>
         <PageHeader title="AI Learning Coach" description="Personalized recommendations generated from your knowledge graph and study history." />
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <p className="text-sm font-medium text-destructive">{error ?? "No recommendations available."}</p>
-            <p className="text-xs text-muted-foreground">Upload and process documents to generate personalized coaching.</p>
+            <p className="text-sm font-medium">{error ?? "No recommendations yet"}</p>
+            <p className="text-xs text-muted-foreground text-pretty">
+              Upload documents and generate your knowledge graph to unlock
+              personalized coaching computed from your real progress.
+            </p>
           </CardContent>
         </Card>
       </>

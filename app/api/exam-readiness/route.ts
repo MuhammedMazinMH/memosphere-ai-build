@@ -1,30 +1,16 @@
 /**
- * Exam readiness API — real document data.
+ * Exam readiness API — real, deterministic data.
  *
- * GET: Calculates per-subject readiness from the authenticated user's uploaded
- * documents. Falls back to stored analytics when the provider is not live.
+ * GET: Computes per-subject readiness deterministically from the authenticated
+ * user's real concepts, quiz attempts, and study sessions (no AI, no mock).
+ * Returns an empty array when the user has no tracked concepts yet.
  */
 import { authService } from '@/lib/services/auth/auth-service.server'
-import { documentService } from '@/lib/services/documents/document-service'
-import { getAIProvider } from '@/lib/services/ai'
+import { examReadinessService } from '@/lib/services'
 import { ok } from '@/lib/api/response'
 
 export async function GET() {
   const user = await authService.getCurrentUser()
-  const userId = user.id ?? ''
-
-  const documents = userId
-    ? await documentService.listDocumentsByUser(userId)
-    : []
-
-  const docContexts = documents.map((d) => ({
-    title: d.title,
-    subject: d.subject ?? d.subjectId,
-    extractedText: d.extractedText,
-  }))
-
-  const provider = getAIProvider()
-  const readiness = await (provider as any).calculateExamReadiness(userId, docContexts)
-
+  const readiness = await examReadinessService.computeForUser(user.id ?? '')
   return ok(readiness)
 }

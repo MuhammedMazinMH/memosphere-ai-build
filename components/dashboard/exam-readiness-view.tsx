@@ -19,16 +19,14 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import { cn } from "@/lib/utils"
-import { examReadinessService } from "@/lib/services"
-
-const examReadiness = examReadinessService.getReadiness()
+import type { ExamReadiness } from "@/types"
 
 const config = {
   coverage: { label: "Coverage", color: "var(--chart-1)" },
   accuracy: { label: "Accuracy", color: "var(--chart-2)" },
 } satisfies ChartConfig
 
-function overall(s: (typeof examReadiness)[number]) {
+function overall(s: ExamReadiness) {
   return Math.round((s.coverage + s.accuracy + s.consistency + s.confidence) / 4)
 }
 
@@ -38,23 +36,47 @@ function readinessBadge(score: number) {
   return { label: "Needs work", cls: "border-destructive/30 bg-destructive/10 text-destructive" }
 }
 
-export function ExamReadinessView() {
+export function ExamReadinessView({ readiness = [] }: { readiness?: ExamReadiness[] }) {
   const radarData = useMemo(
     () =>
-      examReadiness.map((s) => ({
+      readiness.map((s) => ({
         subject: s.subject,
         coverage: s.coverage,
         accuracy: s.accuracy,
       })),
-    [],
+    [readiness],
   )
 
   const aggregate = useMemo(
-    () => Math.round(examReadiness.reduce((acc, s) => acc + overall(s), 0) / examReadiness.length),
-    [],
+    () =>
+      readiness.length === 0
+        ? 0
+        : Math.round(readiness.reduce((acc, s) => acc + overall(s), 0) / readiness.length),
+    [readiness],
   )
 
-  const sorted = useMemo(() => [...examReadiness].sort((a, b) => overall(b) - overall(a)), [])
+  const sorted = useMemo(() => [...readiness].sort((a, b) => overall(b) - overall(a)), [readiness])
+
+  if (readiness.length === 0) {
+    return (
+      <>
+        <PageHeader
+          title="Exam Readiness"
+          description="A weighted view of how prepared you are across every subject."
+        />
+        <Card>
+          <CardContent className="flex flex-col items-center gap-2 py-16 text-center">
+            <GraduationCap className="size-8 text-muted-foreground" />
+            <p className="font-medium">No readiness data yet</p>
+            <p className="max-w-sm text-sm text-muted-foreground text-pretty">
+              Upload documents, generate your knowledge graph, and take quizzes
+              to see per-subject exam readiness computed from your real progress.
+            </p>
+          </CardContent>
+        </Card>
+      </>
+    )
+  }
 
   return (
     <>
@@ -94,7 +116,7 @@ export function ExamReadinessView() {
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <TrendingUp className="size-4 text-chart-4" />
-              Up 6% from last week
+              Across {readiness.length} {readiness.length === 1 ? "subject" : "subjects"}
             </div>
           </CardContent>
         </Card>

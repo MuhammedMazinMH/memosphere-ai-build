@@ -1,29 +1,34 @@
 /**
  * Exam readiness service.
  *
- * Reads per-subject exam readiness scores. Calculation is delegated to the
- * active AI provider; reads are synchronous today (mock data).
+ * Per-subject readiness is computed deterministically (no AI, no mock) from the
+ * user's real concepts, quiz attempts, and study sessions by the metric
+ * calculators. Concepts are not yet persisted per user, so readiness honestly
+ * resolves to an empty set until that system exists.
  */
+import { conceptRepository } from '@/db/repositories/concept-repository'
+import { quizRepository } from '@/db/repositories/quiz-repository'
 import { analyticsRepository } from '@/db/repositories/analytics-repository'
-import { getAIProvider } from '@/lib/services/ai'
+import { computeExamReadiness } from '@/lib/services/metrics/metric-calculators'
 import type { ExamReadiness } from '@/types'
 
 export const examReadinessService = {
-  getReadiness(): ExamReadiness[] {
-    return analyticsRepository.examReadiness()
-  },
-
-  /** Live read of a user's exam readiness from DynamoDB with mock fallback. */
-  async listReadiness(userId: string): Promise<ExamReadiness[]> {
+  /**
+   * Deterministically computes per-subject exam readiness for the authenticated
+   * user. Never throws — returns [] on error or when the user has no concepts.
+   */
+  async computeForUser(userId: string): Promise<ExamReadiness[]> {
+    if (!userId) return []
     try {
-      return await analyticsRepository.examReadinessFromDb(userId)
+      const [concepts, quizAttempts, sessions] = await Promise.all([
+        conceptRepository.findAllConceptsFromDb(),
+        quizRepository.findAttempts(userId),
+        analyticsRepository.studyActivityFromDb(userId),
+      ])
+      return computeExamReadiness(concepts, quizAttempts, sessions)
     } catch (error) {
-      console.error('[v0] examReadinessService.listReadiness DynamoDB error:', error)
-      return analyticsRepository.examReadiness()
+      console.error('[v0] examReadinessService.computeForUser error:', error)
+      return []
     }
-  },
-
-  async calculate(userId: string): Promise<ExamReadiness[]> {
-    return getAIProvider().calculateExamReadiness(userId)
   },
 }

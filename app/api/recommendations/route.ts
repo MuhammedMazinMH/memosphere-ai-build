@@ -1,31 +1,17 @@
 /**
- * Recommendations (AI Coach) API — real document data.
+ * Recommendations (AI Coach) API — real, deterministic data.
  *
- * GET: Generates personalized coaching recommendations from the authenticated
- * user's uploaded documents. Falls back to stored analytics when the provider
- * is not live or the user has no documents.
+ * GET: Computes personalized coaching recommendations deterministically from
+ * the authenticated user's real concepts, quiz attempts, and study sessions
+ * (no AI scores, no mock). Returns an empty recommendation when the user has no
+ * tracked concepts yet.
  */
 import { authService } from '@/lib/services/auth/auth-service.server'
-import { documentService } from '@/lib/services/documents/document-service'
-import { getAIProvider } from '@/lib/services/ai'
+import { recommendationService } from '@/lib/services'
 import { ok } from '@/lib/api/response'
 
 export async function GET() {
   const user = await authService.getCurrentUser()
-  const userId = user.id ?? ''
-
-  const documents = userId
-    ? await documentService.listDocumentsByUser(userId)
-    : []
-
-  const docContexts = documents.map((d) => ({
-    title: d.title,
-    subject: d.subject ?? d.subjectId,
-    extractedText: d.extractedText,
-  }))
-
-  const provider = getAIProvider()
-  const recommendation = await (provider as any).generateRecommendations(userId, docContexts)
-
+  const recommendation = await recommendationService.computeForUser(user.id ?? '')
   return ok(recommendation)
 }
