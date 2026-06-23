@@ -21,6 +21,9 @@ interface GraphSnapshot {
   concepts: Concept[]
   connections: ConceptConnection[]
   updatedAt: number
+  // Index signature so the value satisfies the DynamoDB item constraint
+  // (Record<string, unknown>) used by putItem/getItem.
+  [key: string]: unknown
 }
 
 /** Builds the snapshot partition-key value for a user. */

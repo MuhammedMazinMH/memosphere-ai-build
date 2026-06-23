@@ -22,7 +22,6 @@
 // run server-side (API routes), where the dynamic import resolves normally.
 import type { LanguageModel } from 'ai'
 import { z } from 'zod'
-import { conceptRepository } from '@/db/repositories/concept-repository'
 import { quizRepository } from '@/db/repositories/quiz-repository'
 import { documentRepository } from '@/db/repositories/document-repository'
 import { analyticsRepository } from '@/db/repositories/analytics-repository'
@@ -370,7 +369,8 @@ export abstract class BaseAIProvider implements AIProvider {
   // Concept extraction — uses real extractedText from Document
   // -------------------------------------------------------------------------
   async extractConcepts(documentId: string, extractedText?: string): Promise<Concept[]> {
-    if (!this.isLive) return conceptRepository.findAllConcepts()
+    // No live AI → no concepts. There is no mock/seed fallback.
+    if (!this.isLive) return []
 
     // Prefer caller-supplied text; fall back to DynamoDB fetch.
     const text =
@@ -386,7 +386,8 @@ export abstract class BaseAIProvider implements AIProvider {
         'between them.',
       `Extract all key concepts and their relationships from this study material. For each concept assign: a slug id, label, group (concept/core/subject), mastery (0-100 estimate), importance (0-100), status (core/emerging/weak/connected), difficulty (foundational/intermediate/advanced).\n\nReturn JSON of the form {"concepts":[...],"connections":[{"source":"id","target":"id","strength":0}]}.\n\nMaterial:\n${truncate(text)}`,
     )
-    if (!output) return conceptRepository.findAllConcepts()
+    // Generation/validation failed → no concepts rather than seed data.
+    if (!output) return []
 
     return output.concepts as unknown as Concept[]
   }
