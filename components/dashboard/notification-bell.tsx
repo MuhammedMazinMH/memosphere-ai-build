@@ -83,7 +83,7 @@ export function NotificationBell() {
           </Button>
         }
       />
-      <PopoverContent align="end" className="w-80 p-0">
+      <PopoverContent align="end" sideOffset={8} className="w-80 p-0 overflow-hidden">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <p className="text-sm font-semibold">Notifications</p>
           {unread > 0 && (
@@ -97,7 +97,7 @@ export function NotificationBell() {
             </button>
           )}
         </div>
-        <ScrollArea className="max-h-80">
+        <ScrollArea className="h-auto max-h-[min(320px,_calc(100vh-8rem))]">
           {notifications.length === 0 ? (
             <p className="px-4 py-8 text-center text-sm text-muted-foreground">
               You&apos;re all caught up.
