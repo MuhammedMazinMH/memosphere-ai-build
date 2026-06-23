@@ -100,11 +100,12 @@ const CONCEPT_STATUS_MAP: Record<string, 'core' | 'emerging' | 'weak' | 'connect
 }
 
 const CONCEPT_DIFFICULTY_MAP: Record<string, 'foundational' | 'intermediate' | 'advanced'> = {
-  '1': 'foundational',
-  '2': 'foundational',
-  '3': 'intermediate',
-  '4': 'advanced',
-  '5': 'advanced',
+  // The model (llama-3.3-70b via Groq) emits a 0-based numeric scale.
+  // Numbers are coerced to strings via String() in the normalizer, so both
+  // numeric 0/1/2 and string "0"/"1"/"2" resolve through these keys.
+  '0': 'foundational',
+  '1': 'intermediate',
+  '2': 'advanced',
   easy: 'foundational',
   beginner: 'foundational',
   medium: 'intermediate',
@@ -133,7 +134,7 @@ function normalizeConceptGraph(raw: unknown): unknown {
       if (CONCEPT_STATUS_MAP[key]) concept.status = CONCEPT_STATUS_MAP[key]
     }
 
-    // difficulty may arrive as a number (1-5) OR a string ("easy"); String()
+    // difficulty may arrive as a number (0,1,2) OR a string ("easy"); String()
     // handles both so numeric values resolve against the same map.
     if (difficultyBefore != null) {
       const key = String(difficultyBefore).toLowerCase()
