@@ -2,9 +2,9 @@
  * Document repository (knowledge items) — Amazon DynamoDB.
  *
  * Document bytes live in Amazon S3 (see lib/services/s3-service.ts); this
- * repository stores/returns only metadata items. Synchronous methods serve the
- * demo data; async `*FromDb` methods read from DynamoDB (table: `documents`)
- * when a live database is configured.
+ * repository stores/returns only metadata items. There is NO mock/seed data:
+ * synchronous methods return empty/zero values; async `*FromDb` methods read
+ * from DynamoDB (table: `documents`) and fall back to empty on absence/error.
  */
 import {
   isDatabaseConnected,
@@ -19,46 +19,46 @@ import type { Document } from '@/types'
 
 export const documentRepository = {
   findAll(): Document[] {
-    return getMockTables().documents
+    return []
   },
 
-  findById(id: string): Document | undefined {
-    return getMockTables().documents.find((d) => d.id === id)
+  findById(_id: string): Document | undefined {
+    return undefined
   },
 
-  findBySubject(subjectId: string): Document[] {
-    return getMockTables().documents.filter((d) => d.subjectId === subjectId)
+  findBySubject(_subjectId: string): Document[] {
+    return []
   },
 
   count(): number {
-    return getMockTables().documents.length
+    return 0
   },
 
-  /** Live read of all documents from DynamoDB (Scan), with demo fallback. */
+  /** Live read of all documents from DynamoDB (Scan); empty otherwise. */
   async findAllFromDb(): Promise<Document[]> {
-    if (!isDatabaseConnected()) return this.findAll()
+    if (!isDatabaseConnected()) return []
     return scanAll<Document>('documents')
   },
 
-  /** Live read of a single document from DynamoDB (GetItem), with demo fallback. */
+  /** Live read of a single document from DynamoDB (GetItem); undefined otherwise. */
   async findByIdFromDb(id: string): Promise<Document | undefined> {
-    if (!isDatabaseConnected()) return this.findById(id)
+    if (!isDatabaseConnected()) return undefined
     return getItem<Document>('documents', buildKey('documents', id))
   },
 
-  /** Live read of documents for a subject (Scan + filter), with demo fallback. */
+  /** Live read of documents for a subject (Scan + filter); empty otherwise. */
   async findBySubjectFromDb(subjectId: string): Promise<Document[]> {
-    if (!isDatabaseConnected()) return this.findBySubject(subjectId)
+    if (!isDatabaseConnected()) return []
     const all = await scanAll<Document>('documents')
     return all.filter((d) => d.subjectId === subjectId)
   },
 
   /**
-   * Live read of a user's documents via the `byUser` GSI (Query, newest-first),
-   * with demo fallback. Efficient per-user lookup — no full-table Scan.
+   * Live read of a user's documents via the `byUser` GSI (Query, newest-first).
+   * Efficient per-user lookup — no full-table Scan. Empty when no DB.
    */
   async findByUserFromDb(userId: string): Promise<Document[]> {
-    if (!isDatabaseConnected()) return this.findAll()
+    if (!isDatabaseConnected()) return []
     const [byUser] = gsisOf('documents')
     return queryByIndex<Document>(
       'documents',

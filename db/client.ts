@@ -9,9 +9,10 @@
  * (AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY). The DocumentClient is
  * configured with `removeUndefinedValues: true` for ergonomic writes.
  *
- * Demo mode: when DynamoDB is not configured (see config/env `features.database`),
- * repositories fall back to the in-memory seed via `getMockTables()`, so the
- * entire application keeps working with mock/demo data and no AWS account.
+ * No mock/seed data backs the runtime: when DynamoDB is not configured (see
+ * config/env `features.database`), repositories return empty/zero values so the
+ * UI renders clean empty states rather than demo data. Seed data lives in
+ * lib/mock-data.ts / db/seed.ts and is used only by scripts/seed-dynamodb.ts.
  */
 // NOTE: The AWS SDK is intentionally NOT imported statically here. This module
 // sits in the static import graph of `"use client"` dashboard components (via
@@ -27,7 +28,6 @@ import {
   tableName,
   type TableName,
 } from '@/db/tables'
-import * as seed from '@/db/seed'
 
 /** Whether the app is currently backed by a live DynamoDB database. */
 export function isDatabaseConnected(): boolean {
@@ -247,29 +247,4 @@ export function buildKey(
 
 /* -------------------------------------------------------------------------- */
 /* Demo data source                                                           */
-/* -------------------------------------------------------------------------- */
 
-/**
- * Returns the in-memory mock tables. Repositories use this whenever DynamoDB
- * is not connected. The shapes match types/index.ts exactly so swapping to
- * live DynamoDB items requires no changes upstream.
- */
-export function getMockTables() {
-  return {
-    users: [seed.user],
-    subjects: seed.subjects,
-    documents: seed.knowledgeItems,
-    activity: seed.recentActivity,
-    concepts: seed.graphConcepts,
-    conceptConnections: seed.graphEdges,
-    quizQuestions: seed.quizQuestions,
-    learningGaps: seed.learningGaps,
-    examReadiness: seed.examReadiness,
-    recommendations: seed.aiCoach,
-    learningIntelligence: seed.learningIntelligence,
-    adminStats: seed.adminStats,
-    knowledgeGrowth: seed.knowledgeGrowth,
-    studyActivity: seed.studyActivity,
-    conceptJourney: seed.conceptJourney,
-  }
-}

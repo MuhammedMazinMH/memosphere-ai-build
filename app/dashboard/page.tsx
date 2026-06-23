@@ -12,7 +12,7 @@ import { LearningIntelligence } from "@/components/dashboard/learning-intelligen
 import { ActivityFeed } from "@/components/dashboard/activity-feed"
 import { authService } from "@/lib/services/auth/auth-service.server"
 import { settingsRepository } from "@/db/repositories/settings-repository"
-import { documentService } from "@/lib/services"
+import { analyticsService } from "@/lib/services"
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -30,19 +30,18 @@ export default async function DashboardPage() {
   const settings = user.id ? await settingsRepository.get(user.id) : null
   const goal = settings?.studyGoal ?? ""
 
-  // Real document count for the authenticated user, read from DynamoDB via the
-  // byUser GSI (same source as the Library, so the counts always agree). New
-  // accounts / empty databases naturally resolve to an empty list -> 0.
-  const documents = user.id ? await documentService.listDocumentsByUser(user.id) : []
-  const documentCount = documents.length
+  // Every dashboard metric is computed deterministically from the user's real
+  // DynamoDB records (documents, study sessions, quiz attempts) by the metric
+  // calculators. New accounts / empty databases resolve to honest zero values
+  // and empty states — never mock or placeholder data.
+  const metrics = user.id
+    ? await analyticsService.getDashboardMetrics(user.id)
+    : await analyticsService.getDashboardMetrics("")
 
-  // The remaining metrics depend on systems that do not exist yet (concept
-  // extraction, study-activity tracking, mastery scoring). Until those are
-  // built they MUST report neutral zero values rather than mock/placeholder
-  // data, and the displayed streak is derived from activity (none yet -> 0).
-  const conceptsLearned = 0
-  const studyStreak = 0
-  const avgMastery = 0
+  const documentCount = metrics.documents
+  const conceptsLearned = metrics.conceptsLearned
+  const studyStreak = metrics.studyStreak
+  const avgMastery = metrics.avgMastery
 
   return (
     <>
@@ -66,11 +65,11 @@ export default async function DashboardPage() {
       <AICoachWidget />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <KnowledgeGrowthChart />
-        <StudyActivityChart />
+        <KnowledgeGrowthChart data={metrics.knowledgeGrowth} />
+        <StudyActivityChart data={metrics.studyActivity} />
       </div>
 
-      <LearningIntelligence />
+      <LearningIntelligence data={metrics.learningIntelligence} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-4 lg:col-span-2">
@@ -97,7 +96,7 @@ export default async function DashboardPage() {
         </div>
         <div className="flex flex-col gap-4">
           <h2 className="text-lg font-semibold">Activity</h2>
-          <ActivityFeed />
+          <ActivityFeed items={metrics.recentActivity} />
         </div>
       </div>
     </>
