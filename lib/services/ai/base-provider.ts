@@ -84,6 +84,7 @@ const conceptsSchema = z.object({
 // "1".."5") resolve here. Unknown values are left untouched so Zod's
 // `.default()` still applies when the value is absent.
 const CONCEPT_STATUS_MAP: Record<string, 'core' | 'emerging' | 'weak' | 'connected'> = {
+  active: 'core',
   new: 'emerging',
   learned: 'connected',
   weak: 'weak',
@@ -99,13 +100,10 @@ const CONCEPT_STATUS_MAP: Record<string, 'core' | 'emerging' | 'weak' | 'connect
   needs_improvement: 'weak',
 }
 
+// String synonyms for difficulty. Numeric difficulties are handled separately
+// by `normalizeDifficultyValue` (range-based), since the model emits a numeric
+// 1-10 scale that cannot be enumerated as fixed keys.
 const CONCEPT_DIFFICULTY_MAP: Record<string, 'foundational' | 'intermediate' | 'advanced'> = {
-  // The model (llama-3.3-70b via Groq) emits a 0-based numeric scale.
-  // Numbers are coerced to strings via String() in the normalizer, so both
-  // numeric 0/1/2 and string "0"/"1"/"2" resolve through these keys.
-  '0': 'foundational',
-  '1': 'intermediate',
-  '2': 'advanced',
   easy: 'foundational',
   beginner: 'foundational',
   medium: 'intermediate',
@@ -115,6 +113,24 @@ const CONCEPT_DIFFICULTY_MAP: Record<string, 'foundational' | 'intermediate' | '
   foundational: 'foundational',
   intermediate: 'intermediate',
   advanced: 'advanced',
+}
+
+// Resolve a difficulty value (number OR numeric string OR word) to the strict
+// enum. Numeric scale: 1-3 -> foundational, 4-6 -> intermediate, 7-10 -> advanced.
+// Returns null when the value cannot be mapped, so the original is left intact
+// and Zod's `.default()` still applies.
+function normalizeDifficultyValue(
+  value: unknown,
+): 'foundational' | 'intermediate' | 'advanced' | null {
+  if (value == null) return null
+  const num = typeof value === 'number' ? value : Number(String(value).trim())
+  if (Number.isFinite(num)) {
+    if (num <= 3) return 'foundational'
+    if (num <= 6) return 'intermediate'
+    return 'advanced'
+  }
+  const key = String(value).toLowerCase()
+  return CONCEPT_DIFFICULTY_MAP[key] ?? null
 }
 
 function normalizeConceptGraph(raw: unknown): unknown {
@@ -134,11 +150,11 @@ function normalizeConceptGraph(raw: unknown): unknown {
       if (CONCEPT_STATUS_MAP[key]) concept.status = CONCEPT_STATUS_MAP[key]
     }
 
-    // difficulty may arrive as a number (0,1,2) OR a string ("easy"); String()
-    // handles both so numeric values resolve against the same map.
+    // difficulty may arrive as a number (1-10 scale) OR a string ("easy");
+    // normalizeDifficultyValue handles both via range logic + synonym map.
     if (difficultyBefore != null) {
-      const key = String(difficultyBefore).toLowerCase()
-      if (CONCEPT_DIFFICULTY_MAP[key]) concept.difficulty = CONCEPT_DIFFICULTY_MAP[key]
+      const mapped = normalizeDifficultyValue(difficultyBefore)
+      if (mapped) concept.difficulty = mapped
     }
 
     console.log('[NORMALIZED SAMPLE]', {
@@ -149,6 +165,15 @@ function normalizeConceptGraph(raw: unknown): unknown {
     })
     return concept
   })
+
+  // Verify post-normalization that only strict enum values remain.
+  console.log('[MODEL STATUS VALUES]', [
+    ...new Set(concepts.map((c) => (c as Record<string, unknown>)?.status)),
+  ])
+  console.log('[MODEL DIFFICULTY VALUES]', [
+    ...new Set(concepts.map((c) => (c as Record<string, unknown>)?.difficulty)),
+  ])
+
   return { ...data, concepts }
 }
 
