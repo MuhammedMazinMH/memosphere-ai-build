@@ -279,11 +279,17 @@ export abstract class BaseAIProvider implements AIProvider {
     try {
       const { generateText } = await import('ai')
       const model = await this.getModel()
+      console.log("[AI CALL]", {
+        provider: this.name,
+        modelId: (model as any)?.modelId ?? (model as any)?.id ?? String(model),
+        promptLength: prompt.length,
+      })
       const { text } = await generateText({
         model,
         system: `${system}\n\nRespond with ONLY valid JSON. Do not include markdown code fences, comments, or any prose outside the JSON.`,
         prompt,
       })
+      console.log("[AI RAW RESPONSE]", { rawResponseLength: text?.length ?? 0 })
       const parsed = JSON.parse(extractJson(text))
       console.log("[RAW PARSED JSON]", JSON.stringify(parsed).slice(0, 2000))
       console.log("[PREPROCESS EXISTS]", !!preprocess)
@@ -309,9 +315,10 @@ export abstract class BaseAIProvider implements AIProvider {
         console.log('[ZOD ISSUES]', JSON.stringify(result.error.issues, null, 2))
         return null
       }
+      console.log("[ZOD VALIDATION SUCCESS]")
       return result.data
     } catch (err) {
-      console.log('[v0] AI JSON generation error:', err instanceof Error ? err.message : String(err))
+      console.log('[AI JSON GENERATION ERROR]', err instanceof Error ? err.message : String(err))
       return null
     }
   }
@@ -403,10 +410,19 @@ export abstract class BaseAIProvider implements AIProvider {
     _userId: string,
     documents?: Array<{ id: string; title: string; subject: string; extractedText?: string }>,
   ): Promise<KnowledgeGraph> {
+    console.log("[GRAPH ENTRY]", {
+      isLive: this.isLive,
+      provider: this.name,
+      documentsLength: documents?.length ?? 0,
+      firstDocTitle: documents?.[0]?.title ?? null,
+      firstDocTextLength: documents?.[0]?.extractedText?.length ?? 0,
+      fallbackGuardTriggers: !this.isLive || !documents?.length,
+    })
+
     if (!this.isLive || !documents?.length) {
       const concepts = conceptRepository.findAllConcepts()
-      console.log("[GRAPH FALLBACK RETURNED]", {
-        reason: "fallback",
+      console.log("[RETURNING_FALLBACK_GRAPH]", {
+        reason: !this.isLive ? "isLive=false" : "documents.length=0",
         conceptsCount: concepts.length,
         firstFive: concepts.slice(0, 5).map(c => c.label),
       })
@@ -432,8 +448,8 @@ export abstract class BaseAIProvider implements AIProvider {
 
     if (!output) {
       const concepts = conceptRepository.findAllConcepts()
-      console.log("[GRAPH FALLBACK RETURNED]", {
-        reason: "fallback",
+      console.log("[RETURNING_FALLBACK_GRAPH]", {
+        reason: "output=null (AI request, parser, or zod validation failed)",
         conceptsCount: concepts.length,
         firstFive: concepts.slice(0, 5).map(c => c.label),
       })
@@ -454,8 +470,9 @@ export abstract class BaseAIProvider implements AIProvider {
     }))
 
     const result = { concepts, connections }
-    console.log("[GRAPH FINAL RESULT]", {
+    console.log("[RETURNING_AI_GRAPH]", {
       conceptsCount: result.concepts?.length ?? 0,
+      connectionsCount: result.connections?.length ?? 0,
       firstFive: result.concepts?.slice(0, 5).map(c => c.label),
     })
     return result
