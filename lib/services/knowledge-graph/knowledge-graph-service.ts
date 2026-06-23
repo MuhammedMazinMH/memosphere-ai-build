@@ -20,23 +20,23 @@ export const knowledgeGraphService = {
     return conceptRepository.findJourney()
   },
 
-  /** Live read of all concepts from DynamoDB with mock fallback. */
-  async listConcepts(): Promise<Concept[]> {
+  /** Live read of the user's concepts from their last-good KG snapshot. */
+  async listConcepts(userId: string): Promise<Concept[]> {
     try {
-      return await conceptRepository.findAllConceptsFromDb()
+      return await conceptRepository.findAllConceptsFromDb(userId)
     } catch (error) {
-      console.error('[v0] knowledgeGraphService.listConcepts DynamoDB error:', error)
-      return conceptRepository.findAllConcepts()
+      console.error('[v0] knowledgeGraphService.listConcepts error:', error)
+      return []
     }
   },
 
-  /** Live read of all graph connections from DynamoDB with mock fallback. */
-  async listConnections(): Promise<ConceptConnection[]> {
+  /** Live read of the user's graph connections from their last-good KG snapshot. */
+  async listConnections(userId: string): Promise<ConceptConnection[]> {
     try {
-      return await conceptRepository.findAllConnectionsFromDb()
+      return await conceptRepository.findAllConnectionsFromDb(userId)
     } catch (error) {
-      console.error('[v0] knowledgeGraphService.listConnections DynamoDB error:', error)
-      return conceptRepository.findAllConnections()
+      console.error('[v0] knowledgeGraphService.listConnections error:', error)
+      return []
     }
   },
 

@@ -36,7 +36,7 @@ export const recommendationService = {
     if (!userId) return EMPTY_RECOMMENDATION
     try {
       const [concepts, quizAttempts, sessions] = await Promise.all([
-        conceptRepository.findAllConceptsFromDb(),
+        conceptRepository.findAllConceptsFromDb(userId),
         quizRepository.findAttempts(userId),
         analyticsRepository.studyActivityFromDb(userId),
       ])
@@ -54,7 +54,7 @@ export const recommendationService = {
   async computeLearningIntelligenceForUser(userId: string): Promise<LearningIntelligence> {
     try {
       const [concepts, sessions, documents] = await Promise.all([
-        conceptRepository.findAllConceptsFromDb(),
+        conceptRepository.findAllConceptsFromDb(userId),
         analyticsRepository.studyActivityFromDb(userId),
         documentRepository.findByUserFromDb(userId),
       ])

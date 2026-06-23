@@ -21,7 +21,7 @@ export const examReadinessService = {
     if (!userId) return []
     try {
       const [concepts, quizAttempts, sessions] = await Promise.all([
-        conceptRepository.findAllConceptsFromDb(),
+        conceptRepository.findAllConceptsFromDb(userId),
         quizRepository.findAttempts(userId),
         analyticsRepository.studyActivityFromDb(userId),
       ])
