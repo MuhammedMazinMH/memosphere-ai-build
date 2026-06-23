@@ -117,6 +117,7 @@ const CONCEPT_DIFFICULTY_MAP: Record<string, 'foundational' | 'intermediate' | '
 }
 
 function normalizeConceptGraph(raw: unknown): unknown {
+  console.log("[NORMALIZER EXECUTED]")
   if (!raw || typeof raw !== 'object') return raw
   const data = raw as { concepts?: unknown }
   if (!Array.isArray(data.concepts)) return raw
@@ -313,6 +314,7 @@ export abstract class BaseAIProvider implements AIProvider {
       if (!result.success) {
         console.log('[v0] AI JSON failed schema validation:', result.error.message)
         console.log('[ZOD ISSUES]', JSON.stringify(result.error.issues, null, 2))
+        console.log('[FIRST ZOD ISSUE]', result.error?.issues?.[0])
         return null
       }
       console.log("[ZOD VALIDATION SUCCESS]")
@@ -446,6 +448,8 @@ export abstract class BaseAIProvider implements AIProvider {
       normalizeConceptGraph,
     )
 
+    console.log("[RAW AI GRAPH]", JSON.stringify(output, null, 2))
+
     if (!output) {
       const concepts = conceptRepository.findAllConcepts()
       console.log("[RETURNING_FALLBACK_GRAPH]", {
@@ -460,6 +464,7 @@ export abstract class BaseAIProvider implements AIProvider {
     }
 
     const concepts = output.concepts as unknown as Concept[]
+    console.log("[NORMALIZED GRAPH]", JSON.stringify({ concepts, connections: output.connections }, null, 2))
     console.log('[GRAPH NORMALIZED]', {
       conceptsCount: concepts.length,
     })
