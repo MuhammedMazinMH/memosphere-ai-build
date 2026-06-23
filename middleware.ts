@@ -14,6 +14,12 @@ const isProtectedRoute = createRouteMatcher([
 // first layer so unauthenticated users never reach them.
 const isAdminRoute = createRouteMatcher(['/dashboard/admin(.*)', '/api/admin(.*)'])
 
+// Auth pages. Already-authenticated users should never see these — they are
+// redirected to the dashboard here (a real HTTP redirect) rather than via
+// `redirect()` inside the page server component, which would throw a
+// NEXT_REDIRECT control-flow error that surfaces in the client.
+const isAuthRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)'])
+
 export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req) || isAdminRoute(req)) {
     const { userId } = await auth()
@@ -24,6 +30,13 @@ export default clerkMiddleware(async (auth, req) => {
       }
       const signIn = new URL('/sign-in', req.url)
       return NextResponse.redirect(signIn)
+    }
+  }
+
+  if (isAuthRoute(req)) {
+    const { userId } = await auth()
+    if (userId) {
+      return NextResponse.redirect(new URL('/dashboard', req.url))
     }
   }
 })

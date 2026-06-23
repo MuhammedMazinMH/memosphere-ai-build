@@ -1,7 +1,5 @@
 import Link from "next/link"
-import { redirect } from "next/navigation"
 import type { Metadata } from "next"
-import { auth } from "@clerk/nextjs/server"
 import { AuthShell } from "@/components/auth/auth-shell"
 import { SignUpForm } from "@/components/auth/sign-up-form"
 
@@ -9,14 +7,10 @@ export const metadata: Metadata = {
   title: "Sign up",
 }
 
-export default async function SignUpPage() {
-  // Authenticated users should never see the auth form — send them straight
-  // to the dashboard before anything renders.
-  const { userId } = await auth()
-  if (userId) {
-    redirect("/dashboard")
-  }
-
+export default function SignUpPage() {
+  // Authenticated users are redirected to the dashboard by the middleware
+  // (a real HTTP redirect), so this page only ever renders for signed-out
+  // visitors.
   return (
     <AuthShell
       title="Create your account"
