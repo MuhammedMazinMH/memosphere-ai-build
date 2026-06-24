@@ -174,7 +174,7 @@ memosphere-ai-build/
 │   │   ├── metrics/            # Analytics calculators
 │   │   ├── recommendations/    # Coaching engine
 │   │   ├── learning-gaps/      # Gap detection
-│   │   ├── exam-readiness/     # Readiness scoring
+│   │   ���── exam-readiness/     # Readiness scoring
 │   │   └── ...other services
 │   ├── types/                  # TypeScript types
 │   └── utils/                  # Utility functions
@@ -381,8 +381,6 @@ The above copyright notice and this permission notice shall be included in all c
 
 For issues, questions, or feature requests:
 - Open an issue on the [GitHub repository](https://github.com/MuhammedMazinMH/memosphere-ai-build)
-- Email: support@memosphere-ai.dev
-- GitHub Discussions: [MemoSphere AI Discussions](https://github.com/MuhammedMazinMH/memosphere-ai-build/discussions)
 
 ---
 
