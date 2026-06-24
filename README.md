@@ -313,14 +313,79 @@ All endpoints require Clerk JWT authentication via `Authorization: Bearer <token
 6. **Open PR** against `main` branch
 7. **Wait for review and CI checks**
 
+## Universal Search
+
+MemoSphere AI includes a powerful search feature enabling learners to:
+- Search across all uploaded documents and their extracted concepts
+- Filter results by document, subject, or mastery status
+- Find related concepts and their relationships within the knowledge graph
+- Access search history and save frequent searches for quick reference
+
+## Screenshots
+
+### Dashboard Overview
+![Dashboard](./docs/screenshots/dashboard.png)
+
+### Knowledge Graph Visualization
+![Knowledge Graph](./docs/screenshots/knowledge-graph.png)
+
+### AI Learning Coach
+![AI Coach](./docs/screenshots/ai-coach.png)
+
+### Quiz Interface
+![Quiz](./docs/screenshots/quiz.png)
+
+### Learning Gaps Analysis
+![Learning Gaps](./docs/screenshots/learning-gaps.png)
+
+### Exam Readiness Assessment
+![Exam Readiness](./docs/screenshots/exam-readiness.png)
+
+## Future Roadmap
+
+### Q1 2026
+- [ ] Collaborative study groups with shared knowledge graphs
+- [ ] Advanced search with NLP-powered semantic search
+- [ ] Study session analytics and focus time tracking
+- [ ] Export progress reports as PDF/JSON
+
+### Q2 2026
+- [ ] Mobile app (iOS/Android) with offline document support
+- [ ] Spaced repetition algorithm for optimal review scheduling
+- [ ] Multi-language support for global learners
+- [ ] Integration with major learning platforms (Coursera, Udemy, etc.)
+
+### Q3 2026
+- [ ] Peer learning marketplace for tutors and students
+- [ ] Real-time collaboration during study sessions
+- [ ] AI-generated study guides and summaries
+- [ ] Advanced graph analytics for concept relationship strength
+
+### Q4 2026
+- [ ] Enterprise licenses for educational institutions
+- [ ] API for third-party integrations
+- [ ] Advanced role-based access control (RBAC)
+- [ ] Data warehouse and BI dashboard for institutional insights
+
 ## License
 
-This project is proprietary software. All rights reserved.
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
+
+Copyright © 2026 Muhammed Mazin MH
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 ## Support & Contact
 
-For issues, questions, or feature requests, please open an issue on the GitHub repository or contact the development team.
+For issues, questions, or feature requests:
+- Open an issue on the [GitHub repository](https://github.com/MuhammedMazinMH/memosphere-ai-build)
+- Email: support@memosphere-ai.dev
+- GitHub Discussions: [MemoSphere AI Discussions](https://github.com/MuhammedMazinMH/memosphere-ai-build/discussions)
 
 ---
 
 **Built with:** Next.js 16 • React 19 • Tailwind CSS • AWS • Vercel • Clerk • AI SDK
+
+**Repository:** [MuhammedMazinMH/memosphere-ai-build](https://github.com/MuhammedMazinMH/memosphere-ai-build)
