@@ -23,11 +23,11 @@ const tabs = [
       badge: 'Step 01',
       title: 'Capture anything, instantly.',
       description:
-        'Drop in PDFs, presentations, lecture notes, or whiteboard photos. MemoSphere ingests it all and gets it ready to learn from.',
+        'Drop in your PDF study materials. MemoSphere processes them and gets everything ready to learn from.',
       buttonText: 'Start capturing',
       imageSrc: '/images/how-it-works/capture.png',
       imageAlt:
-        'Study materials like PDFs, slides, and notes being pulled into MemoSphere',
+        'PDF study materials being pulled into MemoSphere',
     },
   },
   {

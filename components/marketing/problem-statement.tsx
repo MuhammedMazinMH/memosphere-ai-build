@@ -4,7 +4,7 @@ const problems = [
   {
     icon: FileWarning,
     title: 'Knowledge gets buried',
-    text: 'PDFs, slides, and notes pile up across folders, apps, and devices until you can never find them again.',
+    text: 'PDFs pile up across folders, apps, and devices until you can never find them again.',
   },
   {
     icon: SearchX,

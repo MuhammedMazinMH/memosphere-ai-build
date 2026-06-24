@@ -29,8 +29,8 @@ export function Hero() {
             <span className="text-primary">searchable intelligence</span>
           </h1>
           <p className="mt-6 text-pretty text-lg leading-relaxed text-muted-foreground">
-            MemoSphere AI captures knowledge from PDFs, slides, notes, and
-            images — then connects, summarizes, and quizzes you on it so
+            MemoSphere AI captures knowledge from your PDF study materials
+            — then connects, summarizes, and quizzes you on it so
             nothing you learn is ever lost again.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
