@@ -321,26 +321,6 @@ MemoSphere AI includes a powerful search feature enabling learners to:
 - Find related concepts and their relationships within the knowledge graph
 - Access search history and save frequent searches for quick reference
 
-## Screenshots
-
-### Dashboard Overview
-![Dashboard](./docs/screenshots/dashboard.png)
-
-### Knowledge Graph Visualization
-![Knowledge Graph](./docs/screenshots/knowledge-graph.png)
-
-### AI Learning Coach
-![AI Coach](./docs/screenshots/ai-coach.png)
-
-### Quiz Interface
-![Quiz](./docs/screenshots/quiz.png)
-
-### Learning Gaps Analysis
-![Learning Gaps](./docs/screenshots/learning-gaps.png)
-
-### Exam Readiness Assessment
-![Exam Readiness](./docs/screenshots/exam-readiness.png)
-
 ## Future Roadmap
 
 ### Q1 2026
