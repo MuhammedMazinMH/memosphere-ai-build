@@ -12,7 +12,7 @@ MemoSphere AI is a full-stack learning management system designed to help studen
 
 ### Core Learning System
 
-- **Document Management** — Upload and organize study materials (PDFs, documents) with automatic text extraction and metadata tagging
+- **Document Management** — Upload and organize PDF study materials with automatic text extraction and metadata tagging. Currently optimized for PDF-based knowledge extraction; additional formats such as DOCX, PPTX, images, and multimedia sources are planned for future releases.
 - **Knowledge Graph Generation** — AI-powered extraction of concepts and relationships from documents; stored snapshots ensure reproducible graph state
 - **Concept Tracking** — Per-user concept mastery monitoring with status tracking (untouched, partial, mastered, overcovered)
 
@@ -189,7 +189,7 @@ memosphere-ai-build/
 ## Architecture & Data Flow
 
 ### Document Upload → Knowledge Graph
-1. **Upload** — User uploads document; `POST /api/upload` stores file in S3
+1. **Upload** — User uploads a PDF; `POST /api/upload` stores file in S3
 2. **Extract** — Backend extracts text from document
 3. **Process** — Metadata (title, subject) tagged
 4. **Store** — Document row created in `documents` DynamoDB table
@@ -350,7 +350,8 @@ MemoSphere AI includes a powerful search feature enabling learners to:
 - [ ] Export progress reports as PDF/JSON
 
 ### Q2 2026
-- [ ] Mobile app (iOS/Android) with offline document support
+- [ ] Additional document format support (DOCX, PPTX, images, audio, video)
+- [ ] Mobile app (iOS/Android) with offline PDF support
 - [ ] Spaced repetition algorithm for optimal review scheduling
 - [ ] Multi-language support for global learners
 - [ ] Integration with major learning platforms (Coursera, Udemy, etc.)

@@ -4,11 +4,11 @@
  * Phase 1 of document intelligence: extract RAW TEXT from uploaded files and
  * nothing more. No AI, no summaries, no concepts, no quizzes.
  *
- * Supported formats:
- *  - PDF            → unpdf (pdf.js, serverless-friendly)
- *  - PPTX           → jszip + slide XML (<a:t> runs)
- *  - MD / TXT       → UTF-8 decode
- *  - PPT (legacy)   → unsupported binary format → throws (marked failed)
+ * Currently optimized for PDF-based knowledge extraction.
+ *
+ * Architecture hooks exist for additional formats but they are not validated
+ * for production use. Additional formats such as PPTX, MD, TXT, images, and
+ * multimedia sources are planned for future releases.
  *
  * This module is reachable only from server code (the /api/upload route). The
  * heavy parsers are loaded via dynamic import() so they never reach the client

@@ -71,7 +71,7 @@ async function getClient(): Promise<S3Client> {
 }
 
 export const s3Service = {
-  /** Uploads a PDF / PPT / image and returns its stored metadata. */
+  /** Uploads a PDF and returns its stored metadata. */
   async uploadFile(
     input: UploadInput & { userId: string },
     bytes?: ArrayBuffer,

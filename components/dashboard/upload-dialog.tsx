@@ -36,14 +36,16 @@ export function UploadDialog({
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const accept = ".pdf,.pptx,.ppt,.md,.txt,.png,.jpg,.jpeg"
+  const accept = ".pdf"
   const maxBytes = 200 * 1024 * 1024
 
-  // Video/audio are no longer supported. Reject them client-side with a
-  // friendly message before any upload is attempted.
+  // Only PDF is currently supported. Reject all other formats client-side
+  // with a friendly message before any upload is attempted.
   const blockedExtensions = [
     "mp4", "mov", "avi", "mkv", "webm", "m4v",
     "mp3", "wav", "aac", "ogg", "flac", "m4a",
+    "pptx", "ppt", "md", "txt", "png", "jpg", "jpeg", "gif", "webp",
+    "docx", "doc", "xlsx", "xls", "csv",
   ]
 
   function openFilePicker() {
@@ -54,12 +56,13 @@ export function UploadDialog({
     const file = files?.[0]
     if (!file) return
     const ext = file.name.split(".").pop()?.toLowerCase() ?? ""
-    const isAvType =
+    const isUnsupported =
       file.type.startsWith("video/") ||
       file.type.startsWith("audio/") ||
-      blockedExtensions.includes(ext)
-    if (isAvType) {
-      toast.error("Video and audio files aren't supported. Upload a PDF, PPTX, MD, TXT, or image.")
+      blockedExtensions.includes(ext) ||
+      (file.type !== "application/pdf" && ext !== "pdf")
+    if (isUnsupported) {
+      toast.error("Only PDF files are currently supported. Additional formats are planned for future releases.")
       return
     }
     if (file.size > maxBytes) {
@@ -142,7 +145,7 @@ export function UploadDialog({
         <DialogHeader>
           <DialogTitle>Upload to your knowledge base</DialogTitle>
           <DialogDescription>
-            Add PDFs, slides, notes, or images. We&apos;ll extract concepts automatically.
+            Upload a PDF document. We&apos;ll extract concepts automatically.
           </DialogDescription>
         </DialogHeader>
 
@@ -182,7 +185,7 @@ export function UploadDialog({
                 {dragActive ? "Drop your file here" : "Click to browse or drop files"}
               </span>
               <span className="text-xs text-muted-foreground">
-                PDF, PPTX, MD, TXT, PNG, JPG up to 200MB
+                PDF up to 200MB. Additional formats coming soon.
               </span>
             </button>
             <Field>
